@@ -17,8 +17,6 @@ a = Analysis(
     hiddenimports=[
         *uvicorn_hiddenimports,
         *fastapi_hiddenimports,
-        *collect_submodules('uvicorn'),
-        *collect_submodules('fastapi'),
         'anthropic',
         'openai',
         'google.genai',
@@ -64,7 +62,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,              # UPX decompression on SSD is slower than plain read
     console=False,          # no terminal window on Windows or Mac
     icon=_icon_icns if _is_mac else _icon_ico,
 )
@@ -74,7 +72,7 @@ coll = COLLECT(
     a.binaries,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,              # keep all DLLs/PYDs uncompressed for faster cold start
     upx_exclude=[],
     name='PaperReader',
 )

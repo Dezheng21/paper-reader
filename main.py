@@ -594,49 +594,39 @@ def _find_free_port(start: int = 8000) -> int:
 
 
 def _run_as_app(port: int) -> None:
-    """Packaged app mode: run uvicorn in background, show status window."""
+    """Packaged app mode: show window immediately, start server in background."""
     import tkinter as tk
     import urllib.request
 
-    threading.Thread(
-        target=lambda: uvicorn.run(app, host="127.0.0.1", port=port, log_level="error"),
-        daemon=True,
-    ).start()
-
-    # Wait until server responds (max ~10 s)
-    for _ in range(40):
-        try:
-            urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=0.5)
-            break
-        except Exception:
-            time.sleep(0.25)
-
-    webbrowser.open(f"http://127.0.0.1:{port}/")
-
+    # ── Build window first so user sees something right away ──────
     root = tk.Tk()
     root.title("论文阅读助手")
     root.resizable(False, False)
     root.configure(bg="#F7F6F3")
 
-    # Center window
-    w, h = 320, 160
+    w, h = 320, 175
     root.update_idletasks()
     x = (root.winfo_screenwidth() - w) // 2
     y = (root.winfo_screenheight() - h) // 2
     root.geometry(f"{w}x{h}+{x}+{y}")
 
-    f = tk.Frame(root, bg="#F7F6F3", padx=24, pady=18)
+    f = tk.Frame(root, bg="#F7F6F3", padx=24, pady=16)
     f.pack(fill="both", expand=True)
 
     tk.Label(f, text="论文阅读助手", font=("Helvetica", 15, "bold"),
              bg="#F7F6F3", fg="#37352F").pack()
-    tk.Label(f, text="✓ 服务正在运行", font=("Helvetica", 10),
-             bg="#F7F6F3", fg="#0F7B6C").pack(pady=2)
-    tk.Label(f, text=f"http://127.0.0.1:{port}", font=("Courier", 9),
+
+    status_var = tk.StringVar(value="⏳  启动中，请稍候…")
+    status_lbl = tk.Label(f, textvariable=status_var, font=("Helvetica", 10),
+                          bg="#F7F6F3", fg="#B45309")
+    status_lbl.pack(pady=2)
+
+    url_var = tk.StringVar(value="")
+    tk.Label(f, textvariable=url_var, font=("Courier", 9),
              bg="#F7F6F3", fg="#999").pack()
 
     bf = tk.Frame(f, bg="#F7F6F3")
-    bf.pack(pady=12)
+    bf.pack(pady=10)
 
     def _open_browser():
         webbrowser.open(f"http://127.0.0.1:{port}/")
@@ -645,14 +635,40 @@ def _run_as_app(port: int) -> None:
         root.destroy()
         os._exit(0)
 
-    tk.Button(bf, text="打开浏览器", command=_open_browser, width=12,
-              relief="flat", bg="#2383E2", fg="white",
-              padx=8, pady=4, cursor="hand2").pack(side="left", padx=4)
+    open_btn = tk.Button(bf, text="打开浏览器", command=_open_browser, width=12,
+                         relief="flat", bg="#CCCCCC", fg="#888888",
+                         padx=8, pady=4, state="disabled")
+    open_btn.pack(side="left", padx=4)
     tk.Button(bf, text="退出", command=_quit, width=8,
               relief="flat", bg="#E8E7E3", fg="#37352F",
               padx=8, pady=4, cursor="hand2").pack(side="left", padx=4)
 
     root.protocol("WM_DELETE_WINDOW", _quit)
+
+    # ── Start server + wait in background, then update UI ─────────
+    def _start_and_notify():
+        threading.Thread(
+            target=lambda: uvicorn.run(app, host="127.0.0.1", port=port, log_level="error"),
+            daemon=True,
+        ).start()
+
+        for _ in range(80):
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=0.3)
+                break
+            except Exception:
+                time.sleep(0.25)
+
+        def _on_ready():
+            status_var.set("✓  服务正在运行")
+            status_lbl.config(fg="#0F7B6C")
+            url_var.set(f"http://127.0.0.1:{port}")
+            open_btn.config(state="normal", bg="#2383E2", fg="white", cursor="hand2")
+            webbrowser.open(f"http://127.0.0.1:{port}/")
+
+        root.after(0, _on_ready)
+
+    threading.Thread(target=_start_and_notify, daemon=True).start()
     root.mainloop()
     os._exit(0)
 
