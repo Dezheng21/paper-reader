@@ -167,8 +167,8 @@ Rules:
 
 def _build_prompt(pages: List[Dict], depth: str, lang: str = "Chinese",
                   intent: str = "quick", learn_lang: bool = False,
-                  intent_question: str = "") -> str:
-    text = _build_text(pages)
+                  intent_question: str = "", max_chars: int = 100000) -> str:
+    text = _build_text(pages, max_chars=max_chars)
     instruction, intent_instr, key_terms_instr, key_terms_schema = \
         _build_prompt_core(depth, lang, intent, learn_lang, intent_question)
 
@@ -260,31 +260,35 @@ async def validate_key(provider: str, api_key: str, model: str = "") -> None:
 async def analyze_paper(
     pages: List[Dict], provider: str, api_key: str, depth: str, model: str = "",
     lang: str = "Chinese", intent: str = "quick", learn_lang: bool = False,
-    intent_question: str = "", pdf_path: str = ""
+    intent_question: str = "", pdf_path: str = "", max_chars: int = 100000
 ) -> dict:
+    # Scale output tokens with input length; cap at 16 384 for broad API compatibility
+    max_out_tokens = max(8192, min(16384, max_chars // 8))
+
     if pdf_path:
         prompt = _build_prompt_pdf(depth, lang, intent, learn_lang, intent_question)
         logger.info("Using PDF-file mode (scanned/image PDF)")
     else:
-        prompt = _build_prompt(pages, depth, lang, intent, learn_lang, intent_question)
+        prompt = _build_prompt(pages, depth, lang, intent, learn_lang, intent_question,
+                               max_chars=max_chars)
 
     last_err = None
     for attempt in range(3):
         try:
             if pdf_path:
                 if provider == "claude":
-                    return await _claude_pdf(prompt, pdf_path, api_key, model)
+                    return await _claude_pdf(prompt, pdf_path, api_key, model, max_out_tokens)
                 if provider == "openai":
-                    return await _openai_pdf(prompt, pdf_path, api_key, model)
+                    return await _openai_pdf(prompt, pdf_path, api_key, model, max_out_tokens)
                 if provider == "gemini":
-                    return await _gemini_pdf(prompt, pdf_path, api_key, model)
+                    return await _gemini_pdf(prompt, pdf_path, api_key, model, max_out_tokens)
             else:
                 if provider == "claude":
-                    return await _claude(prompt, api_key, model)
+                    return await _claude(prompt, api_key, model, max_out_tokens)
                 if provider == "openai":
-                    return await _openai(prompt, api_key, model)
+                    return await _openai(prompt, api_key, model, max_out_tokens)
                 if provider == "gemini":
-                    return await _gemini(prompt, api_key, model)
+                    return await _gemini(prompt, api_key, model, max_out_tokens)
             raise ValueError(f"Unknown provider: {provider}")
         except Exception as e:
             last_err = e
@@ -297,7 +301,7 @@ async def analyze_paper(
     raise last_err
 
 
-async def _claude(prompt: str, api_key: str, model: str) -> dict:
+async def _claude(prompt: str, api_key: str, model: str, max_out_tokens: int = 8192) -> dict:
     try:
         import anthropic
     except ImportError:
@@ -305,7 +309,7 @@ async def _claude(prompt: str, api_key: str, model: str) -> dict:
     client = anthropic.Anthropic(api_key=api_key)
     msg = client.messages.create(
         model=model or "claude-sonnet-4-6",
-        max_tokens=8192,
+        max_tokens=max_out_tokens,
         system="You are a research paper analyzer. Respond with valid JSON only, no markdown.",
         messages=[{"role": "user", "content": prompt}],
     )
@@ -316,7 +320,7 @@ async def _claude(prompt: str, api_key: str, model: str) -> dict:
     return result
 
 
-async def _openai(prompt: str, api_key: str, model: str) -> dict:
+async def _openai(prompt: str, api_key: str, model: str, max_out_tokens: int = 8192) -> dict:
     try:
         from openai import AsyncOpenAI
     except ImportError:
@@ -328,7 +332,7 @@ async def _openai(prompt: str, api_key: str, model: str) -> dict:
             {"role": "system", "content": "You analyze academic papers. Respond with valid JSON only."},
             {"role": "user", "content": prompt},
         ],
-        max_tokens=8192,
+        max_tokens=max_out_tokens,
         response_format={"type": "json_object"},
     )
     u = resp.usage
@@ -338,7 +342,7 @@ async def _openai(prompt: str, api_key: str, model: str) -> dict:
     return result
 
 
-async def _gemini(prompt: str, api_key: str, model: str) -> dict:
+async def _gemini(prompt: str, api_key: str, model: str, max_out_tokens: int = 8192) -> dict:
     try:
         from google import genai
         from google.genai import types as genai_types
@@ -350,6 +354,7 @@ async def _gemini(prompt: str, api_key: str, model: str) -> dict:
         contents=prompt,
         config=genai_types.GenerateContentConfig(
             response_mime_type="application/json",
+            max_output_tokens=max_out_tokens,
         ),
     )
     u = resp.usage_metadata
@@ -359,7 +364,7 @@ async def _gemini(prompt: str, api_key: str, model: str) -> dict:
     return result
 
 
-async def _claude_pdf(prompt: str, pdf_path: str, api_key: str, model: str) -> dict:
+async def _claude_pdf(prompt: str, pdf_path: str, api_key: str, model: str, max_out_tokens: int = 8192) -> dict:
     try:
         import anthropic, base64
     except ImportError:
@@ -369,7 +374,7 @@ async def _claude_pdf(prompt: str, pdf_path: str, api_key: str, model: str) -> d
     client = anthropic.Anthropic(api_key=api_key)
     msg = client.messages.create(
         model=model or "claude-sonnet-4-6",
-        max_tokens=8192,
+        max_tokens=max_out_tokens,
         system="You are a research paper analyzer. Respond with valid JSON only, no markdown.",
         messages=[{"role": "user", "content": [
             {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_b64}},
@@ -383,7 +388,7 @@ async def _claude_pdf(prompt: str, pdf_path: str, api_key: str, model: str) -> d
     return result
 
 
-async def _openai_pdf(prompt: str, pdf_path: str, api_key: str, model: str) -> dict:
+async def _openai_pdf(prompt: str, pdf_path: str, api_key: str, model: str, max_out_tokens: int = 8192) -> dict:
     try:
         import fitz
         from openai import AsyncOpenAI
@@ -404,7 +409,7 @@ async def _openai_pdf(prompt: str, pdf_path: str, api_key: str, model: str) -> d
             {"role": "system", "content": "You analyze academic papers. Respond with valid JSON only."},
             {"role": "user", "content": images + [{"type": "text", "text": prompt}]},
         ],
-        max_tokens=8192,
+        max_tokens=max_out_tokens,
         response_format={"type": "json_object"},
     )
     u = resp.usage
@@ -414,7 +419,7 @@ async def _openai_pdf(prompt: str, pdf_path: str, api_key: str, model: str) -> d
     return result
 
 
-async def _gemini_pdf(prompt: str, pdf_path: str, api_key: str, model: str) -> dict:
+async def _gemini_pdf(prompt: str, pdf_path: str, api_key: str, model: str, max_out_tokens: int = 8192) -> dict:
     try:
         from google import genai
         from google.genai import types as genai_types
@@ -429,7 +434,10 @@ async def _gemini_pdf(prompt: str, pdf_path: str, api_key: str, model: str) -> d
             genai_types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
             prompt,
         ],
-        config=genai_types.GenerateContentConfig(response_mime_type="application/json"),
+        config=genai_types.GenerateContentConfig(
+            response_mime_type="application/json",
+            max_output_tokens=max_out_tokens,
+        ),
     )
     u = resp.usage_metadata
     logger.info("[Gemini-PDF tokens] input=%d, output=%d", u.prompt_token_count, u.candidates_token_count)

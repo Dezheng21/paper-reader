@@ -102,14 +102,13 @@ if not exist "library" mkdir library
 
 :: ── Create desktop shortcut ───────────────────────────────────
 echo [..] Creating desktop shortcut...
-powershell -NoProfile -Command ^
-  "$ws = New-Object -ComObject WScript.Shell;" ^
-  "$lnk = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\Paper Reader.lnk');" ^
-  "$lnk.TargetPath = '%ROOT%\windows\run.bat';" ^
-  "$lnk.WorkingDirectory = '%ROOT%';" ^
-  "$lnk.Description = 'Paper Reader - AI Paper Analysis';" ^
-  "$lnk.Save()"
-echo [OK] Shortcut created on Desktop: Paper Reader.lnk
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $lnk = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\Paper Reader.lnk'); $lnk.TargetPath = '%ROOT%\windows\run.bat'; $lnk.WorkingDirectory = '%ROOT%'; $lnk.Description = 'Paper Reader - AI Paper Analysis'; $lnk.Save()"
+if errorlevel 1 (
+    echo [WARN] Could not create desktop shortcut automatically.
+    echo        Please create it manually: right-click run.bat -^> Send to -^> Desktop
+) else (
+    echo [OK] Shortcut created on Desktop: Paper Reader.lnk
+)
 
 echo.
 echo ==========================================

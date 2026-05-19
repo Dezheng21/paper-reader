@@ -648,6 +648,9 @@ const apiKeyIn        = $('apiKeyIn');
 const modelIn         = $('modelIn');
 const modelHints      = $('modelHints');
 const langSel         = $('langSel');
+const maxCharsIn      = $('maxCharsIn');
+const maxCharsVal     = $('maxCharsVal');
+const maxCharsInfo    = $('maxCharsInfo');
 const topbarLangSel   = $('topbarLangSel');
 const validateBtn     = $('validateBtn');
 const validateResult  = $('validateResult');
@@ -1056,7 +1059,10 @@ function init() {
   if (s.apiKey)   apiKeyIn.value    = s.apiKey;
   if (s.model)    modelIn.value     = s.model;
   if (s.lang)     langSel.value = s.lang;
+  if (s.maxChars) maxCharsIn.value = s.maxChars;
   updateHints();
+  updateMaxCharsInfo();
+  maxCharsIn.addEventListener('input', updateMaxCharsInfo);
 
   // Initialize UI language (independent of AI output language)
   const savedUiLang = localStorage.getItem('pr_ui_lang') || 'Chinese';
@@ -1508,6 +1514,16 @@ async function handleValidate() {
   }
 }
 
+function updateMaxCharsInfo() {
+  const chars = parseInt(maxCharsIn.value);
+  maxCharsVal.textContent = chars.toLocaleString() + ' 字符';
+  const pages = Math.round(chars / 2500);
+  const tokensIn = Math.round(chars / 4);
+  let warning = '';
+  if (chars > 200000) warning = ' ⚠️ 超大文档，每次调用消耗较多 token，建议仅在必要时使用';
+  maxCharsInfo.textContent = `约 ${pages} 页论文 · 输入约 ${tokensIn.toLocaleString()} token${warning}`;
+}
+
 function updateHints() {
   const p = providerSel.value;
   modelHints.innerHTML = (MODEL_HINTS[p] || '')
@@ -1515,7 +1531,7 @@ function updateHints() {
 }
 
 function handleSave() {
-  saveSettings({ provider: providerSel.value, apiKey: apiKeyIn.value, model: modelIn.value, lang: langSel.value });
+  saveSettings({ provider: providerSel.value, apiKey: apiKeyIn.value, model: modelIn.value, lang: langSel.value, maxChars: parseInt(maxCharsIn.value) });
   closeSettings();
   toast(t('settings_saved'), 'success');
 }
@@ -1896,6 +1912,7 @@ async function doAnalyze() {
         intent:          currentIntent,
         learn_lang:      learnLang,
         intent_question: currentQuestion,
+        max_chars:       s.maxChars || 100000,
       }),
     });
     if (!r.ok) {

@@ -352,6 +352,7 @@ class AnalyzeReq(BaseModel):
     intent: str = "quick"
     learn_lang: bool = False
     intent_question: str = ""
+    max_chars: int = 100000
 
 
 @app.post("/analyze")
@@ -380,7 +381,7 @@ async def analyze(req: AnalyzeReq):
         pdf_path = str(path) if total_chars < 200 else ""
         if pdf_path:
             logger.info("Text too sparse (%d chars), switching to PDF-file mode", total_chars)
-        result = await analyze_paper(pages, req.provider, req.api_key, req.depth, req.model, req.lang, req.intent, req.learn_lang, req.intent_question, pdf_path)
+        result = await analyze_paper(pages, req.provider, req.api_key, req.depth, req.model, req.lang, req.intent, req.learn_lang, req.intent_question, pdf_path, req.max_chars)
         logger.info("Analysis complete, themes: %d", len(result.get("themes", result.get("sections", []))))
         return result
     except Exception as e:

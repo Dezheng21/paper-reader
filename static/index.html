@@ -743,6 +743,14 @@ body { display: flex; flex-direction: column; background: var(--bg); }
         <input type="text" id="modelIn" placeholder="如 claude-sonnet-4-6、gpt-4o…">
       </div>
       <div class="hints" id="modelHints"></div>
+      <div class="field">
+        <label id="maxCharsLabel">最大分析长度：<strong id="maxCharsVal">100,000 字符</strong></label>
+        <input type="range" id="maxCharsIn"
+               min="20000" max="500000" step="10000" value="100000"
+               style="width:100%;accent-color:var(--accent);margin:6px 0 4px">
+        <div id="maxCharsInfo" style="font-size:12px;color:var(--t2);line-height:1.5"></div>
+        <small>增大后可分析更长文档，但每次调用消耗更多 token</small>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-analyze" id="saveBtn">保存</button>
