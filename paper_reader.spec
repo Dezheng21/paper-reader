@@ -2,7 +2,6 @@
 import os, sys
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
-# Collect everything uvicorn and fastapi need (they use dynamic imports heavily)
 uvicorn_datas, uvicorn_binaries, uvicorn_hiddenimports = collect_all('uvicorn')
 fastapi_datas, fastapi_binaries, fastapi_hiddenimports = collect_all('fastapi')
 
@@ -11,7 +10,7 @@ a = Analysis(
     pathex=[],
     binaries=uvicorn_binaries + fastapi_binaries,
     datas=[
-        ('static', 'static'),                      # bundled web UI
+        ('static', 'static'),
         *uvicorn_datas,
         *fastapi_datas,
     ],
@@ -24,7 +23,7 @@ a = Analysis(
         'openai',
         'google.genai',
         'google.genai.types',
-        'fitz',                                    # PyMuPDF
+        'fitz',
         'multipart',
         'python_multipart',
         'starlette',
@@ -39,6 +38,9 @@ a = Analysis(
         'httpx',
         'email.mime.multipart',
         'email.mime.text',
+        'tkinter',
+        'tkinter.ttk',
+        '_tkinter',
     ],
     hookspath=[],
     hooksconfig={},
@@ -63,7 +65,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console=False,          # no terminal window on Windows or Mac
     icon=_icon_icns if _is_mac else _icon_ico,
 )
 
@@ -77,7 +79,6 @@ coll = COLLECT(
     name='PaperReader',
 )
 
-# BUNDLE block is only processed by PyInstaller on macOS
 if _is_mac:
     app = BUNDLE(
         coll,
@@ -90,5 +91,6 @@ if _is_mac:
             'CFBundleShortVersionString': '1.0.0',
             'NSRequiresAquaSystemAppearance': False,
             'CFBundleDisplayName': '论文阅读助手',
+            'CFBundleName': '论文阅读助手',
         },
     )

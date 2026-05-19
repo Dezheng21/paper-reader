@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 论文阅读助手 — 打包为独立 .app（可选）
-# 在 Mac 上运行此脚本，生成无需 Python 的独立应用
+# 论文阅读助手 — Mac 打包脚本
+# 生成 .app 和 .dmg，无需 Python 环境，双击即可运行
 
 set -e
 cd "$(dirname "$0")/.."
@@ -14,31 +14,49 @@ VENV_PY=".venv/bin/python"
 [ -f "$VENV_PY" ] || error "请先运行 mac/install.command"
 
 ARCH=$(uname -m)
-warn "目标架构：$ARCH（.app 只能在同架构 Mac 上运行）"
-warn "Intel Mac 需在 M 系列 Mac 上交叉编译：arch -x86_64 bash mac/build.sh"
+warn "目标架构：$ARCH"
+warn "注意：.app 只能在同架构 Mac 上运行（M 系列 / Intel 各自编译）"
 
+# ── 安装 PyInstaller ──────────────────────────────────────────────────────────
 info "安装 PyInstaller…"
 "$VENV_PY" -m pip install pyinstaller -q
 
+# ── 清理旧构建 ────────────────────────────────────────────────────────────────
 info "清理旧构建…"
 rm -rf build dist
 
-if [ ! -f icon.icns ]; then
-    warn "icon.icns 不存在，将使用默认图标。"
-fi
-
-info "打包 .app…"
+# ── 打包 .app ─────────────────────────────────────────────────────────────────
+info "打包 .app（约 3-8 分钟）…"
 "$VENV_PY" -m PyInstaller paper_reader.spec
 
 APP="dist/论文阅读助手.app"
 [ -d "$APP" ] || error "打包失败，未找到 $APP"
-
 info "打包完成！大小：$(du -sh "$APP" | cut -f1)"
+
+# ── 去除隔离属性（避免 Gatekeeper 拦截本地测试）────────────────────────────
+info "清除隔离标记…"
+xattr -cr "$APP" 2>/dev/null || true
+
+# ── 创建 DMG ─────────────────────────────────────────────────────────────────
+DMG="dist/论文阅读助手-Mac.dmg"
+info "创建 DMG…"
+hdiutil create \
+    -volname "论文阅读助手" \
+    -srcfolder "$APP" \
+    -ov \
+    -format UDZO \
+    "$DMG"
+
+info "DMG 已生成：$(pwd)/$DMG"
+
 echo ""
-echo "  位置：$(pwd)/$APP"
+echo "  ✅ 打包完成！"
 echo ""
-warn "macOS Gatekeeper 警告处理："
-warn "  方法一：右键 → 打开 → 在弹框中点「打开」"
-warn "  方法二：终端执行  xattr -cr \"$(pwd)/$APP\""
+echo "  分发文件：$DMG"
+echo "  用户安装：打开 DMG → 把 .app 拖入「应用程序」文件夹"
 echo ""
+warn "首次运行提示（未签名应用）："
+warn "  右键点击 .app → 打开 → 在弹框中点「打开」（仅需一次）"
+echo ""
+
 open dist/

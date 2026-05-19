@@ -580,10 +580,90 @@ def _friendly(msg: str) -> str:
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
-    def _open():
-        time.sleep(1.5)
-        webbrowser.open("http://127.0.0.1:8000")
+def _find_free_port(start: int = 8000) -> int:
+    import socket
+    for port in range(start, start + 10):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind(("127.0.0.1", port))
+                return port
+        except OSError:
+            continue
+    return start
 
-    threading.Thread(target=_open, daemon=True).start()
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
+
+def _run_as_app(port: int) -> None:
+    """Packaged app mode: run uvicorn in background, show status window."""
+    import tkinter as tk
+    import urllib.request
+
+    threading.Thread(
+        target=lambda: uvicorn.run(app, host="127.0.0.1", port=port, log_level="error"),
+        daemon=True,
+    ).start()
+
+    # Wait until server responds (max ~10 s)
+    for _ in range(40):
+        try:
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=0.5)
+            break
+        except Exception:
+            time.sleep(0.25)
+
+    webbrowser.open(f"http://127.0.0.1:{port}/")
+
+    root = tk.Tk()
+    root.title("论文阅读助手")
+    root.resizable(False, False)
+    root.configure(bg="#F7F6F3")
+
+    # Center window
+    w, h = 320, 160
+    root.update_idletasks()
+    x = (root.winfo_screenwidth() - w) // 2
+    y = (root.winfo_screenheight() - h) // 2
+    root.geometry(f"{w}x{h}+{x}+{y}")
+
+    f = tk.Frame(root, bg="#F7F6F3", padx=24, pady=18)
+    f.pack(fill="both", expand=True)
+
+    tk.Label(f, text="论文阅读助手", font=("Helvetica", 15, "bold"),
+             bg="#F7F6F3", fg="#37352F").pack()
+    tk.Label(f, text="✓ 服务正在运行", font=("Helvetica", 10),
+             bg="#F7F6F3", fg="#0F7B6C").pack(pady=2)
+    tk.Label(f, text=f"http://127.0.0.1:{port}", font=("Courier", 9),
+             bg="#F7F6F3", fg="#999").pack()
+
+    bf = tk.Frame(f, bg="#F7F6F3")
+    bf.pack(pady=12)
+
+    def _open_browser():
+        webbrowser.open(f"http://127.0.0.1:{port}/")
+
+    def _quit():
+        root.destroy()
+        os._exit(0)
+
+    tk.Button(bf, text="打开浏览器", command=_open_browser, width=12,
+              relief="flat", bg="#2383E2", fg="white",
+              padx=8, pady=4, cursor="hand2").pack(side="left", padx=4)
+    tk.Button(bf, text="退出", command=_quit, width=8,
+              relief="flat", bg="#E8E7E3", fg="#37352F",
+              padx=8, pady=4, cursor="hand2").pack(side="left", padx=4)
+
+    root.protocol("WM_DELETE_WINDOW", _quit)
+    root.mainloop()
+    os._exit(0)
+
+
+if __name__ == "__main__":
+    port = _find_free_port()
+    if getattr(sys, "frozen", False):
+        _run_as_app(port)
+    else:
+        threading.Thread(
+            target=lambda: (time.sleep(1.5), webbrowser.open(f"http://127.0.0.1:{port}/")),
+            daemon=True,
+        ).start()
+        uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
