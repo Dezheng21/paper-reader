@@ -652,9 +652,11 @@ def _run_as_app(port: int) -> None:
             daemon=True,
         ).start()
 
-        for _ in range(80):
+        ready = False
+        for _ in range(240):           # up to 60 s (240 × 0.25 s)
             try:
-                urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=0.3)
+                urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=0.5)
+                ready = True
                 break
             except Exception:
                 time.sleep(0.25)
@@ -666,7 +668,11 @@ def _run_as_app(port: int) -> None:
             open_btn.config(state="normal", bg="#2383E2", fg="white", cursor="hand2")
             webbrowser.open(f"http://127.0.0.1:{port}/")
 
-        root.after(0, _on_ready)
+        def _on_error():
+            status_var.set("✗  启动失败，请关闭后重试")
+            status_lbl.config(fg="#CB3D3D")
+
+        root.after(0, _on_ready if ready else _on_error)
 
     threading.Thread(target=_start_and_notify, daemon=True).start()
     root.mainloop()
