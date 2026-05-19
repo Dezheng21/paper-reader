@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+dist/
+build/
+
+# 用户数据（不上传）
+uploads/
+library/
+
+# PyInstaller
+*.spec.bak
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+
+# 编辑器
+.vscode/
+.idea/
+*.swp

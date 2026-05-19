@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>论文阅读助手</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* ── Design tokens (Notion × Typora) ────────────────────── */
+:root {
+  --bg:          #F7F6F3;   /* warm off-white canvas */
+  --bg-bar:      #EFEEEB;   /* tab bar / subtle strip */
+  --bg-white:    #FFFFFF;
+  --bg-hover:    rgba(55,53,47,.05);
+  --bg-active:   rgba(35,131,226,.08);
+
+  --t1:  #37352F;                /* primary text */
+  --t2:  rgba(55,53,47,.65);     /* secondary */
+  --t3:  rgba(55,53,47,.38);     /* muted / page numbers */
+
+  --border:   rgba(55,53,47,.10);
+  --border-m: rgba(55,53,47,.18);
+
+  /* accent – Notion blue */
+  --accent:     #2383E2;
+  --accent-s:   rgba(35,131,226,.12);
+  --accent-ss:  rgba(35,131,226,.06);
+
+  /* semantic highlight palette */
+  --green:    #0F7B6C;  --green-s:  rgba(15,123,108,.10);
+  --red:      #CB3D3D;  --red-s:    rgba(203,61,61,.09);
+  --amber:    #B45309;  --amber-s:  rgba(180,83,9,.09);
+  --purple:   #7C3AED;  --purple-s: rgba(124,58,237,.08);
+  --orange:   #C2410C;  --orange-s: rgba(194,65,12,.09);
+}
+
+/* ── Reset ────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Page skeleton ────────────────────────────────────────── */
+html, body {
+  width: 100vw; height: 100vh; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+body { display: flex; flex-direction: column; background: var(--bg); }
+
+/* ── Tab bar ─────────────────────────────────────────────── */
+.tab-bar {
+  height: 34px; min-height: 34px; flex-shrink: 0;
+  background: var(--bg-bar);
+  display: flex; align-items: flex-end;
+  padding: 0 4px 0 8px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+#tabsList {
+  display: flex; align-items: flex-end; gap: 2px;
+  flex: 1; min-width: 0;
+  overflow-x: auto; overflow-y: hidden;
+}
+#tabsList::-webkit-scrollbar { height: 0; }
+.tab-bar::-webkit-scrollbar  { height: 0; }
+.tab {
+  display: flex; align-items: center; gap: 5px;
+  padding: 0 8px 0 11px;
+  height: 28px; min-width: 80px; max-width: 200px;
+  background: rgba(55,53,47,.06);
+  border: 1px solid var(--border); border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer; flex-shrink: 0;
+  transition: background .12s;
+}
+.tab:hover { background: rgba(55,53,47,.10); }
+.tab.active {
+  background: var(--bg-white);
+  border-color: var(--border-m);
+  border-bottom-color: var(--bg-white);
+}
+.tab-title { font-size: 12px; color: var(--t2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; user-select: none; }
+.tab.active .tab-title { color: var(--t1); font-weight: 500; }
+.tab-close { background: none; border: none; color: var(--t3); font-size: 14px; padding: 0 1px; cursor: pointer; border-radius: 3px; line-height: 1; flex-shrink: 0; }
+.tab-close:hover { background: var(--red-s); color: var(--red); }
+.tab-new { background: none; border: none; color: var(--t3); font-size: 18px; padding: 0 8px; cursor: pointer; height: 28px; border-radius: 6px 6px 0 0; flex-shrink: 0; margin-left: 2px; transition: color .12s; align-self: flex-end; }
+.tab-new:hover { color: var(--accent); }
+
+/* ── Topbar ──────────────────────────────────────────────── */
+.topbar {
+  height: 52px; min-height: 52px; flex-shrink: 0;
+  background: var(--bg-white);
+  color: var(--t1);
+  display: flex; align-items: center;
+  padding: 0 18px; gap: 12px;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(55,53,47,.05);
+}
+.app-title { font-size: 14px; font-weight: 700; color: var(--accent); white-space: nowrap; flex-shrink: 0; letter-spacing: -.2px; }
+.topbar-center { flex: 1; display: flex; align-items: center; gap: 12px; justify-content: center; min-width: 0; }
+.topbar-right  { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.filename { font-size: 13px; color: var(--t3); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Layout ──────────────────────────────────────────────── */
+.layout { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar {
+  width: 50%; min-width: 260px; max-width: 80%;
+  background: var(--bg-white);
+  color: var(--t1);
+  display: flex; flex-direction: column;
+  overflow: hidden; flex-shrink: 0;
+  border-right: 1px solid var(--border);
+}
+.resize-handle {
+  width: 4px; background: var(--border);
+  cursor: col-resize; flex-shrink: 0;
+  transition: background .15s; z-index: 10;
+}
+.resize-handle:hover, .resize-handle.dragging { background: var(--accent); }
+.sidebar-controls {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 14px 6px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0; gap: 8px;
+  background: var(--bg-white);
+}
+.sidebar-controls-label { font-size: 10.5px; color: var(--t3); letter-spacing: .6px; text-transform: uppercase; font-weight: 500; }
+.font-btns { display: flex; gap: 4px; }
+.font-btn {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--t2); border-radius: 5px;
+  padding: 3px 9px; font-size: 12px;
+  cursor: pointer; transition: all .15s;
+}
+.font-btn:hover { background: var(--accent-s); color: var(--accent); border-color: var(--accent); }
+.sidebar-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 0 20px; }
+.sidebar-body::-webkit-scrollbar { width: 5px; }
+.sidebar-body::-webkit-scrollbar-thumb { background: var(--border-m); border-radius: 3px; }
+.sidebar-body::-webkit-scrollbar-track { background: transparent; }
+
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; padding: 40px 20px; text-align: center; color: var(--t3); }
+.ei { font-size: 52px; margin-bottom: 16px; }
+.empty-state p { font-size: 14px; line-height: 1.7; color: var(--t2); }
+
+/* paper info */
+.paper-info { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.paper-title-sb { font-size: 14px; font-weight: 600; line-height: 1.5; color: var(--t1); margin-bottom: 4px; }
+.paper-meta { font-size: 12px; color: var(--t2); }
+.abs-box { margin-top: 10px; padding: 9px 11px; background: var(--accent-ss); border-left: 3px solid var(--accent); border-radius: 0 5px 5px 0; font-size: 12px; line-height: 1.65; color: var(--t1); }
+
+/* section tree */
+.sec-item { user-select: none; }
+.sec-head { display: flex; align-items: flex-start; gap: 8px; padding: 8px 16px; cursor: pointer; transition: background .1s; border-radius: 4px; }
+.sec-head:hover { background: var(--bg-hover); }
+.sec-item.active > .sec-head { background: var(--bg-active); border-left: 3px solid var(--accent); padding-left: 13px; border-radius: 0 4px 4px 0; }
+.sec-item[data-level="2"] > .sec-head { padding-left: 30px; }
+.sec-item[data-level="3"] > .sec-head { padding-left: 44px; }
+.sec-item.active[data-level="2"] > .sec-head { padding-left: 27px; }
+.sec-item.active[data-level="3"] > .sec-head { padding-left: 41px; }
+.toggle-icon { width: 16px; min-width: 16px; font-size: 10px; color: var(--t3); margin-top: 3px; text-align: center; transition: transform .2s; cursor: pointer; flex-shrink: 0; }
+.toggle-icon.open { transform: rotate(90deg); }
+.toggle-icon.leaf { opacity: 0; pointer-events: none; }
+.sec-text { flex: 1; min-width: 0; }
+.sec-title { font-size: 13px; font-weight: 500; line-height: 1.45; color: var(--t1); display: block; word-break: break-word; }
+.sec-page { font-size: 11px; color: var(--t3); margin-top: 2px; display: block; }
+.sec-summary { display: none; padding: 6px 16px 10px 40px; font-size: 12px; line-height: 1.7; color: var(--t2); border-bottom: 1px solid var(--border); word-break: break-word; }
+.sec-summary.open { display: block; }
+.kf-list { list-style: none; margin-top: 7px; }
+.kf-list li { font-size: 12px; color: var(--green); padding: 2px 0; }
+.kf-list li::before { content: "• "; color: var(--green); }
+.sec-children { display: none; }
+.sec-children.open { display: block; }
+
+/* ── Editable guide fields ───────────────────────────────── */
+[contenteditable] { outline: none; border-radius: 4px; transition: background .15s; cursor: text; white-space: pre-wrap; }
+[contenteditable]:hover { background: var(--bg-hover); }
+[contenteditable]:focus { background: var(--accent-ss); box-shadow: inset 0 0 0 1px var(--accent-s); }
+
+/* ── Guide (new format) ──────────────────────────────────── */
+.guide-paper-info { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.guide-paper-title { font-size: 14px; font-weight: 600; line-height: 1.5; color: var(--t1); margin-bottom: 4px; }
+.guide-paper-meta  { font-size: 12px; color: var(--t2); }
+
+/* Core blocks — using Notion-style colored callouts */
+.core-question {
+  margin: 10px 14px 0; padding: 10px 14px;
+  background: #EBF4FF; border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  font-size: 13px; color: #1A4A7A; line-height: 1.65; font-style: italic;
+}
+
+.key-insight {
+  margin: 10px 14px 0; padding: 11px 14px;
+  background: #EDFAF5; border-left: 3px solid var(--green);
+  border-radius: 0 6px 6px 0;
+  font-size: 13px; font-weight: 500; color: var(--green); line-height: 1.6;
+}
+.key-insight-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--green); opacity: .75; margin-bottom: 4px; display: block; }
+
+.guide-intro { margin: 12px 14px 0; padding: 0 2px; font-size: 13px; line-height: 1.8; color: var(--t2); }
+
+.themes-section { padding: 8px 0 16px; }
+.theme-item { border-bottom: 1px solid var(--border); }
+.theme-head { display: flex; align-items: flex-start; gap: 8px; padding: 10px 16px; cursor: pointer; transition: background .1s; }
+.theme-head:hover { background: var(--bg-hover); }
+.theme-item.active > .theme-head { background: var(--bg-active); border-left: 3px solid var(--accent); padding-left: 13px; }
+.theme-toggle { width: 16px; min-width: 16px; font-size: 10px; color: var(--t3); margin-top: 3px; text-align: center; transition: transform .2s; flex-shrink: 0; }
+.theme-toggle.open { transform: rotate(90deg); }
+.theme-text { flex: 1; min-width: 0; }
+.theme-heading { font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--t1); display: block; word-break: break-word; }
+
+.theme-body { display: none; padding: 0 16px 12px 40px; }
+.theme-body.open { display: block; }
+.theme-narrative { font-size: 12.5px; line-height: 1.8; color: var(--t2); margin-bottom: 8px; word-break: break-word; }
+.theme-highlight {
+  font-size: 12.5px; font-style: italic; line-height: 1.65;
+  color: var(--amber); border-left: 2px solid rgba(180,83,9,.35);
+  padding-left: 9px; margin-bottom: 10px;
+  background: #FFF8ED; border-radius: 0 4px 4px 0; padding: 6px 9px;
+}
+.page-refs { display: flex; flex-wrap: wrap; gap: 5px; }
+.page-ref-btn {
+  background: var(--accent-s); border: 1px solid rgba(35,131,226,.2);
+  color: var(--accent); font-size: 11px; padding: 2px 8px;
+  border-radius: 4px; cursor: pointer; transition: background .15s;
+}
+.page-ref-btn:hover { background: rgba(35,131,226,.22); }
+
+.skeptics-note {
+  margin: 4px 14px 8px; padding: 9px 12px;
+  background: #FEF0EF; border-left: 3px solid var(--red);
+  border-radius: 0 6px 6px 0;
+  font-size: 12px; color: var(--red); line-height: 1.65;
+}
+.skeptics-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--red); opacity: .75; margin-bottom: 4px; display: block; }
+
+.read-paths { margin: 8px 14px 12px; display: flex; flex-direction: column; gap: 6px; }
+.read-paths-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--t3); margin-bottom: 2px; font-weight: 600; }
+.read-path-item { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 11px; cursor: pointer; transition: border-color .15s, background .15s; }
+.read-path-item:hover { background: var(--accent-ss); border-color: rgba(35,131,226,.25); }
+.read-path-goal { font-size: 12px; color: var(--t1); margin-bottom: 4px; font-weight: 500; }
+.read-path-pages { display: flex; flex-wrap: wrap; gap: 4px; }
+.read-path-page { background: var(--accent-s); color: var(--accent); font-size: 11px; padding: 2px 9px; border-radius: 4px; border: 1px solid rgba(35,131,226,.2); cursor: pointer; transition: background .15s; white-space: nowrap; }
+.read-path-page:hover { background: rgba(35,131,226,.22); }
+
+/* ── Viewer ──────────────────────────────────────────────── */
+.viewer { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #DEDDD9; }
+
+/* Drop zone */
+.drop-zone {
+  flex: 1; margin: 20px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  background: var(--bg-white); border: 2px dashed var(--border-m);
+  border-radius: 12px; color: var(--t3);
+  cursor: pointer; transition: border-color .2s, color .2s, background .2s;
+}
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); color: var(--accent); background: var(--accent-ss); }
+.dz-icon { font-size: 60px; line-height: 1; }
+.drop-zone p { font-size: 14px; text-align: center; line-height: 1.6; }
+
+/* PDF scroll area */
+.pdf-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+.pdf-scroll::-webkit-scrollbar { width: 8px; }
+.pdf-scroll::-webkit-scrollbar-track { background: transparent; }
+.pdf-scroll::-webkit-scrollbar-thumb { background: rgba(55,53,47,.25); border-radius: 4px; }
+.pdf-pages { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; }
+.page-wrap { position: relative; box-shadow: 0 2px 12px rgba(55,53,47,.18), 0 0 0 1px rgba(55,53,47,.06); flex-shrink: 0; border-radius: 2px; }
+.page-wrap canvas { display: block; border-radius: 2px; }
+.page-num-label { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--t3); white-space: nowrap; pointer-events: none; }
+.page-placeholder { background: #D5D4D0; display: flex; align-items: center; justify-content: center; color: rgba(55,53,47,.35); font-size: 14px; border-radius: 2px; }
+@keyframes highlight-pulse {
+  0%   { box-shadow: 0 0 0 4px rgba(35,131,226,.7), 0 2px 12px rgba(55,53,47,.18); }
+  100% { box-shadow: 0 2px 12px rgba(55,53,47,.18), 0 0 0 1px rgba(55,53,47,.06); }
+}
+.page-wrap.flash { animation: highlight-pulse 1.8s ease forwards; }
+.page-badge { position: absolute; bottom: 16px; right: 20px; background: rgba(55,53,47,.72); color: #fff; font-size: 12px; padding: 4px 14px; border-radius: 20px; pointer-events: none; letter-spacing: .2px; }
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: filter .15s, opacity .15s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; }
+.btn-open     { background: var(--t1); color: #fff; }
+.btn-open:hover:not(:disabled) { background: #4A4845; }
+.btn-analyze  { background: var(--accent); color: #fff; }
+.btn-analyze:hover:not(:disabled) { filter: brightness(1.1); }
+.btn-settings { background: transparent; color: var(--t2); border: 1px solid var(--border-m); }
+.btn-settings:hover:not(:disabled) { background: var(--bg-hover); color: var(--t1); border-color: var(--border-m); }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ── Modal ───────────────────────────────────────────────── */
+.overlay { position: fixed; inset: 0; background: rgba(55,53,47,.35); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(2px); }
+.modal { background: var(--bg-white); border-radius: 12px; width: 480px; max-width: 92vw; box-shadow: 0 20px 60px rgba(55,53,47,.18), 0 0 0 1px var(--border); display: flex; flex-direction: column; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 14px; font-size: 15px; font-weight: 600; color: var(--t1); border-bottom: 1px solid var(--border); }
+.modal-x { border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--t3); padding: 4px 7px; border-radius: 5px; }
+.modal-x:hover { background: var(--bg-hover); color: var(--t1); }
+.modal-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 16px; }
+.modal-foot { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 500; color: var(--t1); }
+.field .opt { font-weight: 400; color: var(--t2); font-size: 12px; }
+.field small { font-size: 11px; color: var(--t3); line-height: 1.5; }
+.field select, .field input[type="text"], .field input[type="password"] { padding: 8px 11px; border: 1px solid var(--border-m); border-radius: 6px; font-size: 13.5px; outline: none; transition: border-color .15s, box-shadow .15s; width: 100%; background: var(--bg-white); color: var(--t1); }
+.field select:focus, .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-s); }
+.key-row { display: flex; gap: 8px; }
+.key-row input { flex: 1; }
+.btn-validate { background: var(--accent-s); color: var(--accent); border: 1px solid rgba(35,131,226,.25); padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background .15s; }
+.btn-validate:hover { background: rgba(35,131,226,.2); }
+.btn-validate:disabled { opacity: .45; cursor: not-allowed; }
+.validate-result { font-size: 12px; padding: 5px 0 0; min-height: 18px; font-weight: 500; }
+.validate-result.ok  { color: var(--green); }
+.validate-result.err { color: var(--red); }
+.hints { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px 13px; font-size: 12px; color: var(--t2); line-height: 1.8; }
+
+/* ── Loading ─────────────────────────────────────────────── */
+.loading-box { background: var(--bg-white); border-radius: 12px; padding: 34px 52px; text-align: center; box-shadow: 0 12px 40px rgba(55,53,47,.15); }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border-m); border-top-color: var(--accent); border-radius: 50%; animation: spin .75s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-box p { font-size: 14px; color: var(--t2); }
+
+/* ── Analysis metadata footnote ─────────────────────────── */
+.analysis-meta {
+  margin: 8px 14px 0;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px; color: var(--t3);
+  line-height: 1.6;
+  display: flex; flex-wrap: wrap; gap: 0 12px; align-items: center;
+}
+.analysis-meta-star { color: var(--accent); opacity: .7; margin-right: 4px; }
+.analysis-meta .sep { color: var(--border-m); }
+
+/* ── Analyze status bar ───────────────────────────────────── */
+.analyze-status {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px;
+  background: #EBF4FF; border-bottom: 1px solid rgba(35,131,226,.2);
+  font-size: 13px; color: var(--accent); flex-shrink: 0;
+}
+.analyze-status-spinner {
+  width: 14px; height: 14px; flex-shrink: 0;
+  border: 2px solid rgba(35,131,226,.25); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .75s linear infinite;
+}
+.analyze-status-text { flex: 1; min-width: 0; }
+
+/* ── Intent dialog ───────────────────────────────────────── */
+.intent-layout { display: flex; gap: 14px; align-items: flex-start; }
+.intent-opts { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.intent-opt { display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color .15s, background .15s; }
+.intent-opt:hover { background: var(--bg-hover); border-color: var(--accent); }
+.intent-opt input[type="radio"] { display: none; }
+.intent-opt.selected { border-color: var(--accent); background: var(--accent-s); }
+.intent-opt-title { font-size: 13px; font-weight: 600; color: var(--t1); display: flex; align-items: center; gap: 6px; }
+.intent-opt-badge { font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 10px; background: var(--accent-s); color: var(--accent); }
+.intent-opt-desc  { font-size: 11.5px; color: var(--t2); }
+.intent-desc-panel {
+  width: 210px; flex-shrink: 0;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 15px;
+  font-size: 12px; line-height: 1.75; color: var(--t2);
+  min-height: 220px; transition: opacity .15s;
+}
+.intent-desc-panel .tip-title { font-weight: 700; color: var(--t1); margin-bottom: 8px; font-size: 13px; }
+.intent-desc-panel .tip-empty { color: var(--t3); font-style: italic; }
+.intent-question { margin-top: 10px; padding: 8px 12px; border: 1px solid var(--border-m); border-radius: 6px; font-size: 13px; width: 100%; outline: none; background: var(--bg-white); color: var(--t1); }
+.intent-question:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-s); }
+
+/* ── Topbar language selector ────────────────────────────── */
+.topbar-lang {
+  background: transparent; border: 1px solid var(--border-m);
+  border-radius: 6px; color: var(--t2); font-size: 12.5px; font-weight: 500;
+  padding: 5px 8px; cursor: pointer; outline: none;
+  transition: border-color .15s, background .15s; flex-shrink: 0;
+}
+.topbar-lang:hover { background: var(--bg-hover); border-color: var(--accent); color: var(--t1); }
+.topbar-lang:focus { border-color: var(--accent); }
+.topbar-lang option { background: var(--bg-white); color: var(--t1); }
+
+.btn-learn { background: transparent; color: var(--t2); border: 1px solid var(--border-m); position: relative; }
+.btn-learn.active { background: var(--amber-s); color: var(--amber); border-color: rgba(180,83,9,.3); }
+.btn-learn .tooltip { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--t1); color: #fff; font-size: 12px; line-height: 1.5; padding: 9px 13px; border-radius: 8px; white-space: nowrap; max-width: 240px; white-space: normal; width: 220px; text-align: left; z-index: 50; pointer-events: none; box-shadow: 0 4px 16px rgba(55,53,47,.25); }
+.btn-learn:hover .tooltip { display: block; }
+
+/* ── PDF Text layer ──────────────────────────────────────── */
+.textLayer { position: absolute; left: 0; top: 0; overflow: hidden; line-height: 1; }
+.textLayer span { position: absolute; white-space: pre; transform-origin: 0% 0%; color: transparent; cursor: text; pointer-events: auto; user-select: text; }
+.textLayer span.hl { background: rgba(253,224,71,.55); border-radius: 2px; transition: background .4s; }
+.textLayer span.annotated { background: rgba(35,131,226,.28); border-radius: 2px; }
+.textLayer span.hl-search { background: rgba(245,158,11,.55); border-radius: 2px; }
+.textLayer span.hl-search.current { background: rgba(239,68,68,.65); }
+
+/* ── Selection toolbar ───────────────────────────────────── */
+.sel-bar { position: fixed; display: none; background: var(--bg-white); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(55,53,47,.16); padding: 4px 6px; gap: 4px; flex-direction: row; align-items: center; z-index: 300; }
+.sel-bar.show { display: flex; }
+.sel-btn { padding: 4px 10px; border: none; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; transition: filter .15s; }
+.sel-btn-copy  { background: var(--accent); color: #fff; }
+.sel-btn-annot { background: var(--accent-s); color: var(--accent); border: 1px solid rgba(35,131,226,.25); }
+.sel-btn:hover { filter: brightness(1.1); }
+
+/* ── PDF search bar ──────────────────────────────────────── */
+.pdf-search-bar { position: absolute; top: 8px; right: 16px; display: none; align-items: center; gap: 6px; background: var(--bg-white); border: 1px solid var(--border); border-radius: 9px; box-shadow: 0 4px 16px rgba(55,53,47,.15); padding: 7px 10px; z-index: 50; }
+.pdf-search-bar.show { display: flex; }
+.pdf-search-input { border: 1px solid var(--border-m); border-radius: 6px; padding: 5px 10px; font-size: 13px; outline: none; width: 200px; background: var(--bg-white); color: var(--t1); }
+.pdf-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-s); }
+.pdf-search-count { font-size: 12px; color: var(--t3); white-space: nowrap; min-width: 54px; text-align: center; }
+.pdf-search-nav { background: var(--accent-s); color: var(--accent); border: 1px solid rgba(35,131,226,.2); border-radius: 5px; padding: 3px 8px; cursor: pointer; font-size: 13px; font-weight: 600; line-height: 1; }
+.pdf-search-nav:hover { background: rgba(35,131,226,.2); }
+.pdf-search-nav:disabled { opacity: .35; cursor: not-allowed; }
+.pdf-search-close { background: none; border: none; color: var(--t3); cursor: pointer; font-size: 15px; padding: 0 3px; border-radius: 4px; }
+.pdf-search-close:hover { background: var(--red-s); color: var(--red); }
+
+/* ── Annotation popup ────────────────────────────────────── */
+.annot-popup { position: fixed; background: var(--bg-white); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 30px rgba(55,53,47,.16); padding: 13px; width: 260px; z-index: 400; flex-direction: column; gap: 8px; display: none; }
+.annot-popup.show { display: flex; }
+.annot-quote { font-size: 11px; color: var(--t2); border-left: 3px solid var(--accent); padding-left: 7px; line-height: 1.5; max-height: 52px; overflow: hidden; }
+.annot-textarea { border: 1px solid var(--border-m); border-radius: 6px; padding: 8px; font-size: 13px; resize: vertical; min-height: 70px; outline: none; font-family: inherit; background: var(--bg-white); color: var(--t1); }
+.annot-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-s); }
+.annot-popup-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.annot-btn { padding: 5px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 500; }
+.annot-btn-save   { background: var(--accent); color: #fff; }
+.annot-btn-cancel { background: var(--bg); color: var(--t2); border: 1px solid var(--border); }
+
+/* ── Annotations sidebar ─────────────────────────────────── */
+.annots-section { padding: 0 14px 16px; border-top: 1px solid var(--border); margin-top: 4px; }
+.annots-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--t3); margin: 10px 0 8px; display: block; font-weight: 600; }
+.annot-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; margin-bottom: 7px; }
+.annot-item-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 4px; margin-bottom: 5px; }
+.annot-item-quote { font-size: 11px; color: var(--accent); border-left: 2px solid rgba(35,131,226,.35); padding-left: 6px; flex: 1; cursor: pointer; line-height: 1.5; }
+.annot-item-del { background: none; border: none; color: var(--t3); cursor: pointer; font-size: 13px; padding: 0 2px; flex-shrink: 0; }
+.annot-item-del:hover { color: var(--red); }
+.annot-item-note { font-size: 12px; color: var(--t2); line-height: 1.6; }
+.annot-item-meta { font-size: 11px; color: var(--t3); margin-top: 4px; }
+
+/* ── Vocab cards ─────────────────────────────────────────── */
+.vocab-section { padding: 4px 14px 16px; border-top: 1px solid var(--border); margin-top: 4px; }
+.vocab-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--t3); margin: 10px 0 8px; display: block; font-weight: 600; }
+.vocab-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.vocab-original { font-size: 14px; font-weight: 600; color: var(--amber); margin-bottom: 1px; }
+.vocab-translation { font-size: 12px; color: var(--accent); margin-bottom: 5px; }
+.vocab-def { font-size: 12px; color: var(--t2); line-height: 1.6; margin-bottom: 6px; }
+
+/* ── Library ─────────────────────────────────────────────── */
+.lib-modal { background: var(--bg-white); border-radius: 12px; width: 680px; max-width: 94vw; max-height: 82vh; box-shadow: 0 20px 60px rgba(55,53,47,.18), 0 0 0 1px var(--border); display: flex; flex-direction: column; color: var(--t1); }
+.lib-head { display: flex; align-items: center; gap: 12px; padding: 18px 22px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.lib-head h2 { font-size: 15px; font-weight: 600; flex: 1; color: var(--t1); }
+.lib-search { flex: 1; background: var(--bg); border: 1px solid var(--border-m); border-radius: 7px; padding: 7px 12px; font-size: 13px; color: var(--t1); outline: none; }
+.lib-search::placeholder { color: var(--t3); }
+.lib-search:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-s); }
+.lib-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+.lib-body::-webkit-scrollbar { width: 5px; }
+.lib-body::-webkit-scrollbar-thumb { background: var(--border-m); border-radius: 3px; }
+.lib-empty { display: flex; flex-direction: column; align-items: center; padding: 60px 0; color: var(--t3); gap: 10px; font-size: 14px; }
+.lib-empty .ei { font-size: 48px; }
+.lib-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.lib-card:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-s); }
+.lib-card-title { font-size: 14px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; color: var(--t1); }
+.lib-card-meta { font-size: 12px; color: var(--t2); margin-bottom: 10px; }
+.lib-card-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lib-tags { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; align-items: center; }
+.lib-tag { background: var(--accent-s); color: var(--accent); font-size: 11px; padding: 2px 8px; border-radius: 20px; }
+.lib-tag-input { background: transparent; border: 1px dashed rgba(35,131,226,.3); border-radius: 20px; color: var(--accent); font-size: 11px; padding: 2px 8px; outline: none; width: 120px; }
+.lib-tag-input::placeholder { color: var(--t3); }
+.lib-tag-input:focus { border-color: var(--accent); }
+.lib-add-tag { font-size: 11px; color: var(--t3); cursor: pointer; padding: 2px 6px; border-radius: 20px; border: 1px dashed var(--border-m); white-space: nowrap; }
+.lib-add-tag:hover { color: var(--accent); border-color: var(--accent); }
+.lib-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.lib-btn { padding: 5px 12px; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: filter .15s; }
+.lib-btn-load { background: var(--accent); color: #fff; }
+.lib-btn-del  { background: var(--red-s); color: var(--red); border: 1px solid rgba(203,61,61,.2); }
+.lib-btn:hover { filter: brightness(1.1); }
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 11px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 200; max-width: 380px; box-shadow: 0 4px 20px rgba(55,53,47,.18); animation: toast-in .2s ease; border: 1px solid transparent; }
+.toast-error   { background: #FEF0EF; color: var(--red); border-color: rgba(203,61,61,.2); }
+.toast-success { background: #EDFAF5; color: var(--green); border-color: rgba(15,123,108,.2); }
+@keyframes toast-in { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Mode-specific result sections ───────────────────────── */
+.section-label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--t3); margin-bottom: 8px; }
+.mode-section { margin: 12px 14px 0; padding: 12px 13px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); }
+
+/* deep notes */
+.contributions-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.contributions-list li { padding: 5px 8px 5px 24px; position: relative; font-size: 12.5px; line-height: 1.6; color: var(--t1); background: var(--accent-ss); border-radius: 5px; }
+.contributions-list li::before { content: "✦"; position: absolute; left: 8px; color: var(--accent); font-size: 10px; top: 7px; }
+.result-item { margin-bottom: 8px; padding: 8px 10px; background: var(--green-s); border-left: 3px solid var(--green); border-radius: 0 6px 6px 0; }
+.result-finding { font-size: 12.5px; font-weight: 500; color: var(--t1); margin-bottom: 3px; }
+.result-data { font-size: 12px; color: var(--green); font-family: monospace; }
+.result-comp { font-size: 11.5px; color: var(--t2); margin-top: 2px; }
+.methodology-text { font-size: 12.5px; line-height: 1.75; color: var(--t2); }
+
+/* critical */
+.innovation-verdict { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.verdict-good { background: var(--green-s); color: var(--green); }
+.verdict-mid  { background: var(--amber-s); color: var(--amber); }
+.verdict-bad  { background: var(--red-s);   color: var(--red); }
+.issue-item { margin-bottom: 7px; }
+.issue-title { font-size: 12.5px; font-weight: 600; color: var(--amber); margin-bottom: 2px; }
+.issue-detail { font-size: 12px; line-height: 1.65; color: var(--t2); }
+.fatal-item { padding: 7px 10px; background: var(--red-s); border-left: 3px solid var(--red); border-radius: 0 6px 6px 0; margin-bottom: 6px; }
+.fatal-weakness { font-size: 12.5px; font-weight: 600; color: var(--red); }
+.fatal-impact { font-size: 12px; color: var(--t2); margin-top: 2px; }
+.citation-box { padding: 9px 11px; background: var(--accent-ss); border: 1px solid var(--border); border-radius: 6px; font-size: 12.5px; line-height: 1.65; color: var(--t2); font-style: italic; }
+
+/* ── Citations ───────────────────────────────────────────── */
+.citations-list { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.citation-item {
+  background: var(--amber-s);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 6px 6px 0;
+  padding: 8px 11px;
+}
+.citation-label { display: block; font-size: 10px; color: var(--amber); opacity: .8; margin-bottom: 4px; letter-spacing: .4px; font-weight: 600; text-transform: uppercase; }
+.citation-text { display: block; font-size: 12px; color: var(--t2); line-height: 1.65; font-style: italic; word-break: break-word; }
+.citation-actions { display: flex; gap: 5px; margin-top: 7px; }
+.cite-btn { padding: 2px 9px; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: pointer; transition: background .15s; }
+.cite-copy { background: var(--accent-s); color: var(--accent); border: 1px solid rgba(35,131,226,.2); }
+.cite-copy:hover { background: rgba(35,131,226,.2); }
+.cite-find { background: var(--green-s); color: var(--green); border: 1px solid rgba(15,123,108,.2); }
+.cite-find:hover { background: rgba(15,123,108,.18); }
+
+/* research */
+.gap-item { padding: 5px 8px 5px 22px; position: relative; font-size: 12.5px; line-height: 1.6; color: var(--t2); margin-bottom: 4px; }
+.gap-item::before { content: "▸"; position: absolute; left: 6px; color: var(--purple); }
+.idea-item { margin-bottom: 10px; padding: 10px 12px; background: var(--purple-s); border-radius: 8px; border: 1px solid rgba(124,58,237,.18); }
+.idea-name { font-size: 13px; font-weight: 600; color: var(--purple); margin-bottom: 6px; }
+.idea-hypothesis { font-size: 12px; line-height: 1.65; color: var(--t2); margin-bottom: 4px; }
+.idea-challenges { font-size: 11.5px; color: var(--amber); }
+.ref-keywords { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.ref-tag { padding: 3px 10px; background: var(--accent-s); border: 1px solid rgba(35,131,226,.2); border-radius: 20px; font-size: 11.5px; color: var(--accent); cursor: default; }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <span class="app-title" id="appTitle">论文阅读助手</span>
+  <div class="topbar-center">
+    <label class="btn btn-open" id="openPaperLabel">
+      <input type="file" id="fileInput" accept=".pdf" style="display:none">
+      <span id="openPaperText">打开论文</span>
+    </label>
+    <span class="filename" id="filenameDisplay">未打开文件</span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-analyze" id="analyzeBtn" disabled>分析结构</button>
+    <button class="btn btn-settings" id="pdfToMdBtn" disabled title="PDF → MD">PDF → MD</button>
+    <select id="topbarLangSel" class="topbar-lang" title="界面语言 / UI Language">
+      <option value="Chinese">中文简体</option>
+      <option value="English">English</option>
+      <option value="Chinese Traditional">中文繁體</option>
+      <option value="Japanese">日本語</option>
+      <option value="Korean">한국어</option>
+      <option value="French">Français</option>
+      <option value="German">Deutsch</option>
+      <option value="Spanish">Español</option>
+      <option value="Vietnamese">Tiếng Việt</option>
+    </select>
+    <button class="btn btn-learn" id="learnLangBtn">
+      <span id="learnLangText">语言学习</span>
+      <span class="tooltip" id="learnLangTooltip">开启后，AI 会在导读中额外提取 5-8 个核心术语，附上原文词汇、译文和释义。适合在阅读外文文献时同步学习专业词汇。会额外消耗少量 token。</span>
+    </button>
+    <button class="btn btn-settings" id="libraryBtn"><span id="libraryText">📚 书架</span></button>
+    <button class="btn btn-settings" id="settingsBtn"><span id="settingsText">⚙ 设置</span></button>
+  </div>
+</header>
+
+<!-- Tab bar -->
+<nav class="tab-bar">
+  <div id="tabsList"></div>
+  <button class="tab-new" id="tabNewBtn" title="新标签页">＋</button>
+</nav>
+
+<!-- Main -->
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-controls">
+      <span class="sidebar-controls-label">导读</span>
+      <div class="font-btns">
+        <button class="font-btn" id="fontDecBtn" title="缩小字体">A−</button>
+        <button class="font-btn" id="fontIncBtn" title="放大字体">A+</button>
+        <button class="font-btn" id="exportBtn" title="导出笔记为 Markdown">↓ 导出</button>
+      </div>
+    </div>
+    <div class="analyze-status" id="analyzeStatus" style="display:none">
+      <div class="analyze-status-spinner"></div>
+      <span class="analyze-status-text" id="analyzeStatusText">AI 正在分析论文…</span>
+    </div>
+    <div class="sidebar-body" id="sidebarBody">
+      <div class="empty-state">
+        <div class="ei">📋</div>
+        <p>打开论文后点击<br>「分析结构」查看大纲</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="resize-handle" id="resizeHandle"></div>
+
+  <div class="viewer">
+    <div id="pdfSearchBar" class="pdf-search-bar">
+      <input id="pdfSearchInput" class="pdf-search-input" placeholder="在 PDF 中搜索…">
+      <span id="pdfSearchCount" class="pdf-search-count"></span>
+      <button id="pdfSearchPrev" class="pdf-search-nav" title="上一个">↑</button>
+      <button id="pdfSearchNext" class="pdf-search-nav" title="下一个">↓</button>
+      <button id="pdfSearchOcr" class="pdf-search-nav" title="对扫描版页面进行 AI OCR 识别" style="display:none;background:rgba(166,227,161,.18);color:#a6e3a1;border-color:rgba(166,227,161,.3);font-size:11px;padding:3px 7px">OCR</button>
+      <button id="pdfSearchClose" class="pdf-search-close" title="关闭">✕</button>
+    </div>
+    <div class="drop-zone" id="dropZone">
+      <div class="dz-icon">📄</div>
+      <p>拖入 PDF 或点击「打开论文」</p>
+    </div>
+    <div class="pdf-scroll" id="pdfScroll" style="display:none">
+      <div class="pdf-pages" id="pdfPages"></div>
+    </div>
+    <div class="page-badge" id="pageBadge" style="display:none">
+      <span id="curPage">1</span> / <span id="totPage">1</span>
+    </div>
+  </div>
+</div>
+
+<!-- Selection toolbar -->
+<div id="selBar" class="sel-bar">
+  <button id="selCopyBtn" class="sel-btn sel-btn-copy">复制</button>
+  <button id="selAnnotBtn" class="sel-btn sel-btn-annot">添加笔记</button>
+</div>
+
+<!-- Annotation popup -->
+<div class="annot-popup" id="annotPopup">
+  <div class="annot-quote" id="annotQuote"></div>
+  <textarea class="annot-textarea" id="annotNote" placeholder="添加笔记…" rows="3"></textarea>
+  <div class="annot-popup-actions">
+    <button class="annot-btn annot-btn-cancel" id="annotCancel">取消</button>
+    <button class="annot-btn annot-btn-save" id="annotSave">保存笔记</button>
+  </div>
+</div>
+
+<!-- Intent dialog -->
+<div class="overlay" id="intentOverlay" style="display:none">
+  <div class="modal" style="width:700px">
+    <div class="modal-head">
+      <span>开始分析</span>
+      <button class="modal-x" id="intentClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>你读这篇文章的目的</label>
+        <div class="intent-layout">
+          <div class="intent-opts" id="intentOpts">
+            <div class="intent-opt selected" data-intent="quick">
+              <span class="intent-opt-title">快速了解核心观点 <span class="intent-opt-badge">导读</span></span>
+              <span class="intent-opt-desc">不打算读原文，只需掌握精华</span>
+            </div>
+            <div class="intent-opt" data-intent="deep">
+              <span class="intent-opt-title">精读前的预热导航 <span class="intent-opt-badge">导读</span></span>
+              <span class="intent-opt-desc">导读作为精读前的预热和导航</span>
+            </div>
+            <div class="intent-opt" data-intent="question">
+              <span class="intent-opt-title">我有一个具体问题 <span class="intent-opt-badge">导读</span></span>
+              <span class="intent-opt-desc">导读围绕我的问题重点展开</span>
+            </div>
+            <div class="intent-opt" data-intent="deep_notes">
+              <span class="intent-opt-title">结构化精读笔记 <span class="intent-opt-badge">深度</span></span>
+              <span class="intent-opt-desc">完整提取论文逻辑骨架与实验数据</span>
+            </div>
+            <div class="intent-opt" data-intent="critical">
+              <span class="intent-opt-title">批判性分析 <span class="intent-opt-badge">审稿</span></span>
+              <span class="intent-opt-desc">模拟审稿人视角，专门找硬伤</span>
+            </div>
+            <div class="intent-opt" data-intent="research">
+              <span class="intent-opt-title">延伸研究与选题 <span class="intent-opt-badge">科研</span></span>
+              <span class="intent-opt-desc">为你的研究课题挖掘切入点</span>
+            </div>
+          </div>
+          <div class="intent-desc-panel" id="intentDesc">
+            <div class="tip-empty">鼠标悬停在左侧选项上查看详细说明</div>
+          </div>
+        </div>
+        <input class="intent-question" id="intentQuestion" placeholder="我想了解……" style="display:none">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-analyze" id="intentConfirm">开始分析</button>
+    </div>
+  </div>
+</div>
+
+<!-- Library modal -->
+<div class="overlay" id="libraryOverlay" style="display:none">
+  <div class="lib-modal">
+    <div class="lib-head">
+      <h2>📚 书架</h2>
+      <input class="lib-search" id="libSearch" placeholder="搜索标题…">
+      <button class="modal-x" id="libraryClose">✕</button>
+    </div>
+    <div class="lib-body" id="libBody">
+      <div class="lib-empty"><div class="ei">📭</div><span>还没有保存的论文</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay" id="settingsOverlay" style="display:none">
+  <div class="modal">
+    <div class="modal-head">
+      <span>设置</span>
+      <button class="modal-x" id="settingsClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>AI 服务商</label>
+        <select id="providerSel">
+          <option value="claude">Claude (Anthropic)</option>
+          <option value="openai">OpenAI (GPT)</option>
+          <option value="gemini">Gemini (Google)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>API Key</label>
+        <div class="key-row">
+          <input type="password" id="apiKeyIn" placeholder="粘贴你的 API Key…">
+          <button class="btn-validate" id="validateBtn">验证</button>
+        </div>
+        <div class="validate-result" id="validateResult"></div>
+        <small>仅存储在本地浏览器，不上传到服务器</small>
+      </div>
+      <div class="field">
+        <label>输出语言</label>
+        <select id="langSel">
+          <option value="Chinese">中文（简体）</option>
+          <option value="English">English</option>
+          <option value="Chinese Traditional">中文（繁體）</option>
+          <option value="Japanese">日本語</option>
+          <option value="Korean">한국어</option>
+          <option value="French">Français</option>
+          <option value="German">Deutsch</option>
+          <option value="Spanish">Español</option>
+          <option value="Vietnamese">Tiếng Việt</option>
+        </select>
+        <small>无论论文用何种语言，AI 分析结果将翻译为此语言</small>
+      </div>
+      <div class="field">
+        <label>模型 <span class="opt">（留空使用默认）</span></label>
+        <input type="text" id="modelIn" placeholder="如 claude-sonnet-4-6、gpt-4o…">
+      </div>
+      <div class="hints" id="modelHints"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-analyze" id="saveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="overlay" id="loadingOverlay" style="display:none">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <p id="loadingMsg">处理中…</p>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
