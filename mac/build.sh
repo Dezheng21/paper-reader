@@ -60,3 +60,6 @@ warn "  右键点击 .app → 打开 → 在弹框中点「打开」（仅需一
 echo ""
 
 open dist/
+
+echo ""
+read -p "按回车关闭…  "
