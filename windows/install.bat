@@ -1,6 +1,7 @@
 @echo off
 title Paper Reader - Install
 cd /d "%~dp0\.."
+set ROOT=%cd%
 
 echo.
 echo ==========================================
@@ -28,7 +29,6 @@ if not errorlevel 1 (
     winget install -e --id Python.Python.3 --silent --accept-package-agreements --accept-source-agreements
     if not errorlevel 1 (
         echo [OK] Python installed via winget.
-        :: Refresh PATH from registry
         for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v PATH 2^>nul') do set "USER_PATH=%%b"
         for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v PATH 2^>nul') do set "SYS_PATH=%%b"
         set "PATH=%SYS_PATH%;%USER_PATH%"
@@ -48,7 +48,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [..] Installing Python silently (requires a moment)...
+echo [..] Installing Python silently...
 "%TEMP%\python_setup.exe" /quiet PrependPath=1 Include_test=0
 if errorlevel 1 (
     echo [ERROR] Python installation failed.
@@ -58,7 +58,6 @@ if errorlevel 1 (
 )
 del "%TEMP%\python_setup.exe" >nul 2>&1
 
-:: Refresh PATH after silent install
 for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v PATH 2^>nul') do set "USER_PATH=%%b"
 for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v PATH 2^>nul') do set "SYS_PATH=%%b"
 set "PATH=%SYS_PATH%;%USER_PATH%"
@@ -101,11 +100,23 @@ if errorlevel 1 (
 if not exist "uploads" mkdir uploads
 if not exist "library" mkdir library
 
+:: ── Create desktop shortcut ───────────────────────────────────
+echo [..] Creating desktop shortcut...
+powershell -NoProfile -Command ^
+  "$ws = New-Object -ComObject WScript.Shell;" ^
+  "$lnk = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\Paper Reader.lnk');" ^
+  "$lnk.TargetPath = '%ROOT%\windows\run.bat';" ^
+  "$lnk.WorkingDirectory = '%ROOT%';" ^
+  "$lnk.Description = 'Paper Reader - AI Paper Analysis';" ^
+  "$lnk.Save()"
+echo [OK] Shortcut created on Desktop: Paper Reader.lnk
+
 echo.
 echo ==========================================
 echo    [OK] Installation complete!
 echo.
-echo    Next step: run windows\build.bat to build PaperReader.exe
+echo    Launch: double-click "Paper Reader" on your Desktop
+echo    Or run: windows\run.bat
 echo ==========================================
 echo.
 pause
