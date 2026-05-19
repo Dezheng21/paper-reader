@@ -1,45 +1,45 @@
 @echo off
-chcp 65001 >nul
-title 论文阅读助手 - 打包 .exe
+title Paper Reader - Build EXE
 cd /d "%~dp0\.."
 
 echo.
 echo ==========================================
-echo    论文阅读助手  --  Windows 打包
+echo    Paper Reader  --  Build Windows EXE
 echo ==========================================
 echo.
 
 if not exist ".venv\Scripts\python.exe" (
-    echo [错误] 未找到虚拟环境，请先运行 windows\install.bat
+    echo [ERROR] Virtual environment not found.
+    echo Please run windows\install.bat first.
     pause
     exit /b 1
 )
 
-echo [..] 安装 PyInstaller...
+echo [..] Installing PyInstaller...
 .venv\Scripts\pip.exe install pyinstaller -q
 
-echo [..] 清理旧构建...
+echo [..] Cleaning previous build...
 if exist build rmdir /s /q build
 if exist dist  rmdir /s /q dist
 
-echo [..] 打包 .exe，约 3-8 分钟，请耐心等待...
+echo [..] Building EXE (this takes 3-8 minutes, please wait)...
 .venv\Scripts\python.exe -m PyInstaller paper_reader.spec
 
 if not exist "dist\PaperReader\PaperReader.exe" (
-    echo [错误] 打包失败，请查看上方错误信息。
+    echo [ERROR] Build failed. Check the output above for details.
     pause
     exit /b 1
 )
 
-echo [..] 压缩为 zip...
+echo [..] Creating ZIP archive...
 powershell -NoProfile -Command "Compress-Archive -Path 'dist\PaperReader' -DestinationPath 'dist\PaperReader-Windows.zip' -Force"
 
 echo.
 echo ==========================================
-echo    [OK] 打包完成！
+echo    [OK] Build complete!
 echo.
-echo    分发文件: dist\PaperReader-Windows.zip
-echo    使用方法: 解压 zip，双击 PaperReader.exe
+echo    Distributable: dist\PaperReader-Windows.zip
+echo    Usage: unzip, then double-click PaperReader.exe
 echo ==========================================
 echo.
 explorer dist\
