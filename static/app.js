@@ -1519,9 +1519,14 @@ function updateMaxCharsInfo() {
   maxCharsVal.textContent = chars.toLocaleString() + ' 字符';
   const pages = Math.round(chars / 2500);
   const tokensIn = Math.round(chars / 4);
+  // output tokens vary by analysis type; ~8K–20K is typical
+  const totalLow  = Math.round(tokensIn + 8000);
+  const totalHigh = Math.round(tokensIn + 20000);
+  const fmtLow  = totalLow  >= 1000 ? Math.round(totalLow  / 1000) + 'K' : totalLow;
+  const fmtHigh = totalHigh >= 1000 ? Math.round(totalHigh / 1000) + 'K' : totalHigh;
   let warning = '';
-  if (chars > 200000) warning = ' ⚠️ 超大文档，每次调用消耗较多 token，建议仅在必要时使用';
-  maxCharsInfo.textContent = `约 ${pages} 页论文 · 输入约 ${tokensIn.toLocaleString()} token${warning}`;
+  if (chars > 200000) warning = '  ⚠️ 超大文档，消耗较多 token，建议仅在必要时使用';
+  maxCharsInfo.textContent = `支持约 ${pages} 页以内的论文完整分析 · 每次实际消耗约 ${fmtLow}–${fmtHigh} token（含输出）${warning}`;
 }
 
 function updateHints() {
