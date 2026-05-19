@@ -34,12 +34,18 @@ if not exist "dist\PaperReader\PaperReader.exe" (
 echo [..] Creating ZIP archive...
 powershell -NoProfile -Command "Compress-Archive -Path 'dist\PaperReader' -DestinationPath 'dist\PaperReader-Windows.zip' -Force"
 
+echo [..] Adding Windows Defender exclusion (speeds up first launch)...
+powershell -NoProfile -Command "Add-MpPreference -ExclusionPath '%cd%\dist\PaperReader'" 2>nul
+echo [OK] Defender exclusion added for dist\PaperReader
+
 echo.
 echo ==========================================
 echo    [OK] Build complete!
 echo.
 echo    Distributable: dist\PaperReader-Windows.zip
 echo    Usage: unzip, then double-click PaperReader.exe
+echo    Note: unzip folder should also be added to Defender exclusion
+echo          on the user's PC for fast startup.
 echo ==========================================
 echo.
 explorer dist\

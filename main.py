@@ -647,10 +647,16 @@ def _run_as_app(port: int) -> None:
 
     # ── Start server + wait in background, then update UI ─────────
     def _start_and_notify():
-        threading.Thread(
-            target=lambda: uvicorn.run(app, host="127.0.0.1", port=port, log_level="error"),
-            daemon=True,
-        ).start()
+        import traceback as _tb
+
+        def _run_server():
+            try:
+                uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+            except Exception:
+                log = Path.home() / "PaperReader_error.log"
+                log.write_text(_tb.format_exc(), encoding="utf-8")
+
+        threading.Thread(target=_run_server, daemon=True).start()
 
         ready = False
         for _ in range(240):           # up to 60 s (240 × 0.25 s)
