@@ -1558,6 +1558,9 @@ function init() {
 
     const findBtn = e.target.closest('.cite-find');
     if (findBtn) { searchCitationInPDF(findBtn.dataset.q || ''); return; }
+
+    const detailsToggle = e.target.closest('.details-toggle');
+    if (detailsToggle) { toggleDetailsLayer(); return; }
   });
 
   // Library
@@ -2538,7 +2541,7 @@ function renderGuide(data) {
   html += renderCognitionLayer(data);
 
   // Toggle: collapse/expand the details below
-  html += `<div class="details-toggle" onclick="toggleDetailsLayer()">
+  html += `<div class="details-toggle">
     <span class="details-toggle-text" id="detailsToggleText">展开完整分析</span>
     <span class="details-toggle-icon" id="detailsToggleIcon">▾</span>
   </div>`;
