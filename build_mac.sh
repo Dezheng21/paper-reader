@@ -26,9 +26,12 @@ warn "To build for Intel on an M-series Mac: arch -x86_64 bash build_mac.sh"
 
 # ── 安装依赖 ──────────────────────────────────────────────────────────────
 info "Installing dependencies..."
-$PY -m pip install --upgrade pip -q
-$PY -m pip install -r requirements.txt -q
-$PY -m pip install pyinstaller -q
+$PY -m pip install --upgrade pip -q --cache-dir "$(pwd)/.pip-cache"
+$PY -m pip install -r requirements.txt -q --cache-dir "$(pwd)/.pip-cache"
+$PY -m pip install pyinstaller==6.10.0 -q --cache-dir "$(pwd)/.pip-cache"
+
+export PYINSTALLER_CONFIG_DIR="$(pwd)/.pyinstaller-cache"
+export PYTHONPYCACHEPREFIX="$(pwd)/.pycache-build"
 
 # ── 清理旧构建 ────────────────────────────────────────────────────────────
 info "Cleaning previous build..."
@@ -63,6 +66,9 @@ echo "  Data:  ~/Library/Application Support/PaperKnowKnow/"
 echo ""
 
 # ── Gatekeeper 提示 ───────────────────────────────────────────────────────
+xattr -cr "$APP_PATH" 2>/dev/null || true
+codesign --force --deep --sign - "$APP_PATH" 2>/dev/null || true
+
 warn "App is NOT code-signed. macOS Gatekeeper will block it on first launch."
 warn "Fix with one of these:"
 warn "  a) xattr -cr \"$(pwd)/$APP_PATH\""
@@ -71,4 +77,4 @@ echo ""
 
 # ── 打开 dist 目录 ────────────────────────────────────────────────────────
 info "Opening dist folder..."
-open dist/
+open dist/ 2>/dev/null || true

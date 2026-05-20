@@ -1,29 +1,20 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os, sys
-from PyInstaller.utils.hooks import collect_all, collect_submodules
-
-uvicorn_datas, uvicorn_binaries, uvicorn_hiddenimports = collect_all('uvicorn')
-fastapi_datas, fastapi_binaries, fastapi_hiddenimports = collect_all('fastapi')
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=uvicorn_binaries + fastapi_binaries,
+    binaries=[],
     datas=[
         ('static', 'static'),
-        *uvicorn_datas,
-        *fastapi_datas,
     ],
     hiddenimports=[
-        *uvicorn_hiddenimports,
-        *fastapi_hiddenimports,
         'anthropic',
         'openai',
         'google.genai',
         'google.genai.types',
         'fitz',
         'multipart',
-        'python_multipart',
         'starlette',
         'starlette.middleware',
         'starlette.middleware.cors',
@@ -33,17 +24,29 @@ a = Analysis(
         'anyio.abc',
         'anyio._backends._asyncio',
         'anyio._backends._trio',
+        'uvicorn',
+        'uvicorn.config',
+        'uvicorn.lifespan',
+        'uvicorn.lifespan.on',
+        'uvicorn.loops',
+        'uvicorn.loops.auto',
+        'uvicorn.protocols',
+        'uvicorn.protocols.http',
+        'uvicorn.protocols.http.auto',
+        'uvicorn.protocols.websockets',
+        'uvicorn.protocols.websockets.auto',
+        'uvicorn.server',
+        'fastapi',
+        'fastapi.middleware',
+        'fastapi.middleware.cors',
         'httpx',
         'email.mime.multipart',
         'email.mime.text',
-        'tkinter',
-        'tkinter.ttk',
-        '_tkinter',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['tkinter', '_tkinter'],
     noarchive=False,
 )
 
