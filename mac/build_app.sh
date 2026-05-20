@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Build a self-contained PaperKnowKnow.app bundle for macOS.
 # Uses python-build-standalone (relocatable Python) — no system Python required.
-set -e
+set -euo pipefail
+# Trace every command so CI logs show which line failed
+set -x
 
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
