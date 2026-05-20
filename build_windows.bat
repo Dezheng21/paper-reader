@@ -11,6 +11,6 @@ echo ==> Building .exe...
 pyinstaller paper_reader.spec
 
 echo.
-echo Done! App is at: dist\PaperReader\PaperReader.exe
-echo Data will be stored in: %%APPDATA%%\PaperReader\
+echo Done! App is at: dist\PaperKnowKnow\PaperKnowKnow.exe
+echo Data will be stored in: %%APPDATA%%\PaperKnowKnow\
 pause

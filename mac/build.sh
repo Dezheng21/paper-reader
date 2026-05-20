@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 论文阅读助手 — Mac 打包脚本
+# PaperKnowKnow — Mac 打包脚本
 # 生成 .app 和 .dmg，无需 Python 环境，双击即可运行
 
 set -e
@@ -29,7 +29,7 @@ rm -rf build dist
 info "打包 .app（约 3-8 分钟）…"
 "$VENV_PY" -m PyInstaller paper_reader.spec
 
-APP="dist/论文阅读助手.app"
+APP="dist/PaperKnowKnow.app"
 [ -d "$APP" ] || error "打包失败，未找到 $APP"
 info "打包完成！大小：$(du -sh "$APP" | cut -f1)"
 
@@ -38,10 +38,10 @@ info "清除隔离标记…"
 xattr -cr "$APP" 2>/dev/null || true
 
 # ── 创建 DMG ─────────────────────────────────────────────────────────────────
-DMG="dist/论文阅读助手-Mac.dmg"
+DMG="dist/PaperKnowKnow-Mac.dmg"
 info "创建 DMG…"
 hdiutil create \
-    -volname "论文阅读助手" \
+    -volname "PaperKnowKnow" \
     -srcfolder "$APP" \
     -ov \
     -format UDZO \

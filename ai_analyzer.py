@@ -14,13 +14,19 @@ DEPTH_INSTRUCTIONS = {
 
 INTENT_INSTRUCTIONS = {
     "quick": (
-        "The reader wants a quick overview and will NOT read the original paper. "
-        "Prioritize the significance and takeaways. Cut anything a non-specialist doesn't need."
+        "MODE: QUICK UNDERSTANDING. The reader may NOT read the original paper. "
+        "Do not behave like a detailed reading guide. Compress aggressively. "
+        "Prioritize only: the paper's central question, the author's answer, why it matters, "
+        "3-5 concrete takeaways, and one common misunderstanding to avoid. "
+        "Keep themes few and high-signal; avoid methodological details unless they are essential to the main claim. "
+        "read_this_if should be minimal and practical: only point to the 1-3 places worth opening if the reader has limited time."
     ),
     "deep": (
-        "The reader will read the original paper AFTER this guide. "
-        "Emphasize the logical structure and argumentation so they know what to look for. "
-        "In read_this_if, be specific about which sections reward careful reading and why."
+        "MODE: CLOSE-READING NAVIGATION. The reader WILL read the original paper after this guide. "
+        "Your job is to prepare their attention before close reading. "
+        "Emphasize the paper's argument route: what problem it enters, how the author builds the case, "
+        "where the key turns in the reasoning happen, and which pages/sections deserve slow reading. "
+        "Make read_this_if detailed and specific: tell the reader what to look for at each location and why it matters."
     ),
     "deep_notes": (
         "Generate comprehensive structured reading notes like a senior researcher. "
@@ -31,7 +37,9 @@ INTENT_INSTRUCTIONS = {
         "  \"limitations_future\": {\"author_admits\": \"limitations the author acknowledges\", \"expert_critique\": \"blind spots an expert would flag\"}"
     ),
     "critical": (
-        "Act as a demanding reviewer for a top journal. Focus entirely on finding flaws. "
+        "Act as a fair but demanding reviewer for a top journal. Do NOT merely attack. "
+        "First recognize the paper's strongest contribution, then evaluate whether the evidence and method actually support it. "
+        "Be rigorous, balanced, and specific; avoid performative harshness. "
         "You MUST populate these extra fields: "
         "innovation_verdict (EXACTLY one of: '真正突破' | '增量创新' | '新瓶装旧酒'), "
         "innovation_analysis (detailed assessment vs SOTA), "
@@ -43,6 +51,7 @@ INTENT_INSTRUCTIONS = {
     "research": (
         "Act as a research mentor helping the reader find new research directions. "
         "The reader's own research topic is provided in the question field — use it throughout. "
+        "If the reader's research topic is broad, turn it into 2-3 sharper possible angles before proposing experiments. "
         "You MUST populate these extra fields: "
         "transfer_analysis (feasibility of applying this paper's core method to the reader's topic, with specific adaptations needed), "
         "research_gaps (array of 2-3 specific unsolved problems this paper leaves open, especially relevant to the reader's topic), "
@@ -72,14 +81,19 @@ def _build_prompt_core(depth: str, lang: str, intent: str,
     instruction = DEPTH_INSTRUCTIONS.get(depth, DEPTH_INSTRUCTIONS["brief"])
 
     if intent == "question" and intent_question:
+        safe_q = intent_question[:500].replace("<", "&lt;").replace(">", "&gt;")
         intent_instr = (
-            f"The reader has a specific question: \"{intent_question}\". "
-            "Reorganize themes to address this question as directly as possible. "
-            "Put the most relevant themes first."
+            f"MODE: QUESTION-LED READING. The reader's specific question is: <user_question>{safe_q}</user_question>. "
+            "Do NOT merely reorganize a generic guide. Start from this question. "
+            "The output should first give the most direct answer the paper supports, then show the evidence, "
+            "then clearly state what the paper does NOT answer or cannot prove. "
+            "Themes must be selected and ordered by relevance to the question. "
+            "Every theme should explain how it helps answer, complicate, or limit the reader's question."
         )
     elif intent == "research" and intent_question:
+        safe_q = intent_question[:500].replace("<", "&lt;").replace(">", "&gt;")
         base = INTENT_INSTRUCTIONS["research"]
-        intent_instr = base + f" The reader's research topic is: \"{intent_question}\"."
+        intent_instr = base + f" The reader's research topic is: <user_question>{safe_q}</user_question>."
     else:
         intent_instr = INTENT_INSTRUCTIONS.get(intent, INTENT_INSTRUCTIONS["quick"])
 
@@ -135,6 +149,20 @@ Return ONLY a valid JSON object (no markdown fences) with this exact structure:
   "core_question": "The single central question this paper addresses. One sentence.",
   "key_insight": "The most important or surprising finding. 1-2 sentences with personality.",
   "guide_intro": "Opening paragraph (3-5 sentences). Avoid starting with 'This paper...'",
+  "visual_summary": {{
+    "logic_steps": [
+      {{"label": "问题", "text": "What problem/question the paper starts from"}},
+      {{"label": "方法", "text": "What material/data/method the author uses"}},
+      {{"label": "发现", "text": "The central finding or conceptual move"}},
+      {{"label": "结论", "text": "What conclusion or implication follows"}}
+    ],
+    "evidence_chain": [
+      {{"claim": "one key claim", "support": "quote/data/method/figure", "status": "verified|unverified|not_checked", "page": 1}}
+    ],
+    "concept_map": [
+      "concept A → relation → concept B"
+    ]
+  }},
   "themes": [
     {{
       "id": "t1",
@@ -161,6 +189,7 @@ Rules:
 - read_this_if: 2-4 entries, practical and specific. For each location: "page" is the page number, "lines" is an approximate line range on that page (e.g. "3~12"), "hint" is a verbatim 5-8 word phrase from the paper text at that location (original language)
 - citations per theme: 1-2 verbatim sentences/clauses copied EXACTLY from the paper in its ORIGINAL language — never translate, never paraphrase
 - key_citations: 3-5 of the most important or memorable sentences from the entire paper, verbatim in original language, each with a short label in {lang} explaining its significance
+- visual_summary is for the UI dashboard: keep it short, visual, and structurally useful; concept_map items should describe relationships, not just isolated keywords
 - if the intent instructions say to populate extra fields, you MUST include them in the JSON
 - return valid JSON only"""
 
@@ -197,6 +226,20 @@ Return ONLY a valid JSON object (no markdown fences) with this exact structure:
   "core_question": "The single central question this paper addresses. One sentence.",
   "key_insight": "The most important or surprising finding. 1-2 sentences with personality.",
   "guide_intro": "Opening paragraph (3-5 sentences). Avoid starting with 'This paper...'",
+  "visual_summary": {{
+    "logic_steps": [
+      {{"label": "问题", "text": "What problem/question the paper starts from"}},
+      {{"label": "方法", "text": "What material/data/method the author uses"}},
+      {{"label": "发现", "text": "The central finding or conceptual move"}},
+      {{"label": "结论", "text": "What conclusion or implication follows"}}
+    ],
+    "evidence_chain": [
+      {{"claim": "one key claim", "support": "quote/data/method/figure", "status": "verified|unverified|not_checked", "page": 1}}
+    ],
+    "concept_map": [
+      "concept A → relation → concept B"
+    ]
+  }},
   "themes": [
     {{
       "id": "t1",
@@ -223,6 +266,7 @@ Rules:
 - read_this_if: 2-4 entries, practical and specific. For each location: "page" is the page number, "lines" is an approximate line range on that page (e.g. "3~12"), "hint" is a verbatim 5-8 word phrase from the paper text at that location (original language)
 - citations per theme: 1-2 verbatim sentences/clauses copied EXACTLY from the paper in its ORIGINAL language — never translate, never paraphrase
 - key_citations: 3-5 of the most important or memorable sentences from the entire paper, verbatim in original language, each with a short label in {lang} explaining its significance
+- visual_summary is for the UI dashboard: keep it short, visual, and structurally useful; concept_map items should describe relationships, not just isolated keywords
 - if the intent instructions say to populate extra fields, you MUST include them in the JSON
 - return valid JSON only
 
@@ -272,23 +316,48 @@ async def analyze_paper(
         prompt = _build_prompt(pages, depth, lang, intent, learn_lang, intent_question,
                                max_chars=max_chars)
 
+    COMPAT_PROVIDERS = {
+        "deepseek": ("https://api.deepseek.com",      "deepseek-chat"),
+        "groq":     ("https://api.groq.com/openai/v1", "llama-3.3-70b-versatile"),
+        "mistral":  ("https://api.mistral.ai/v1",      "mistral-small-latest"),
+    }
+
     last_err = None
     for attempt in range(3):
         try:
             if pdf_path:
+                # OpenAI-compat providers don't have PDF vision — fall back to text mode
+                if provider in COMPAT_PROVIDERS:
+                    text_prompt = _build_prompt(pages, depth, lang, intent, learn_lang,
+                                                intent_question, max_chars=max_chars)
+                    base_url, default_model = COMPAT_PROVIDERS[provider]
+                    result = await _openai_compat(text_prompt, api_key, model or default_model,
+                                                  max_out_tokens, base_url)
+                    return _attach_evidence_checks(result, pages)
                 if provider == "claude":
-                    return await _claude_pdf(prompt, pdf_path, api_key, model, max_out_tokens)
+                    result = await _claude_pdf(prompt, pdf_path, api_key, model, max_out_tokens)
+                    return _attach_evidence_checks(result, pages)
                 if provider == "openai":
-                    return await _openai_pdf(prompt, pdf_path, api_key, model, max_out_tokens)
+                    result = await _openai_pdf(prompt, pdf_path, api_key, model, max_out_tokens)
+                    return _attach_evidence_checks(result, pages)
                 if provider == "gemini":
-                    return await _gemini_pdf(prompt, pdf_path, api_key, model, max_out_tokens)
+                    result = await _gemini_pdf(prompt, pdf_path, api_key, model, max_out_tokens)
+                    return _attach_evidence_checks(result, pages)
             else:
+                if provider in COMPAT_PROVIDERS:
+                    base_url, default_model = COMPAT_PROVIDERS[provider]
+                    result = await _openai_compat(prompt, api_key, model or default_model,
+                                                  max_out_tokens, base_url)
+                    return _attach_evidence_checks(result, pages)
                 if provider == "claude":
-                    return await _claude(prompt, api_key, model, max_out_tokens)
+                    result = await _claude(prompt, api_key, model, max_out_tokens)
+                    return _attach_evidence_checks(result, pages)
                 if provider == "openai":
-                    return await _openai(prompt, api_key, model, max_out_tokens)
+                    result = await _openai(prompt, api_key, model, max_out_tokens)
+                    return _attach_evidence_checks(result, pages)
                 if provider == "gemini":
-                    return await _gemini(prompt, api_key, model, max_out_tokens)
+                    result = await _gemini(prompt, api_key, model, max_out_tokens)
+                    return _attach_evidence_checks(result, pages)
             raise ValueError(f"Unknown provider: {provider}")
         except Exception as e:
             last_err = e
@@ -339,6 +408,27 @@ async def _openai(prompt: str, api_key: str, model: str, max_out_tokens: int = 8
     logger.info("[OpenAI tokens] input=%d, output=%d, total=%d", u.prompt_tokens, u.completion_tokens, u.total_tokens)
     result = _parse(resp.choices[0].message.content)
     result['_usage'] = {'input': u.prompt_tokens, 'output': u.completion_tokens, 'total': u.total_tokens}
+    return result
+
+
+async def _openai_compat(prompt: str, api_key: str, model: str,
+                         max_out_tokens: int = 8192, base_url: str = None) -> dict:
+    """OpenAI-compatible providers: DeepSeek, Groq, Mistral."""
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=api_key, **({"base_url": base_url} if base_url else {}))
+    resp = await client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": "You analyze academic papers. Respond with valid JSON only."},
+            {"role": "user",   "content": prompt},
+        ],
+        max_tokens=max_out_tokens,
+    )
+    u = resp.usage
+    logger.info("[%s tokens] input=%d, output=%d", model, u.prompt_tokens, u.completion_tokens)
+    result = _parse(resp.choices[0].message.content)
+    result['_usage'] = {'input': u.prompt_tokens, 'output': u.completion_tokens,
+                        'total': u.prompt_tokens + u.completion_tokens}
     return result
 
 
@@ -443,6 +533,151 @@ async def _gemini_pdf(prompt: str, pdf_path: str, api_key: str, model: str, max_
     logger.info("[Gemini-PDF tokens] input=%d, output=%d", u.prompt_token_count, u.candidates_token_count)
     result = _parse(resp.text)
     result['_usage'] = {'input': u.prompt_token_count, 'output': u.candidates_token_count, 'total': u.prompt_token_count + u.candidates_token_count}
+    return result
+
+
+def _normalize_evidence_text(text: str) -> str:
+    """Normalize text for rough quote matching across line breaks and punctuation."""
+    if not text:
+        return ""
+    text = text.lower()
+    # Normalize common curly quotes/dashes before stripping punctuation.
+    text = (text.replace("“", '"').replace("”", '"')
+                .replace("‘", "'").replace("’", "'")
+                .replace("—", "-").replace("–", "-"))
+    return re.sub(r"[\W_]+", "", text, flags=re.UNICODE)
+
+
+def _find_evidence(fragment: str, pages: List[Dict], preferred_page=None) -> dict:
+    """Return a lightweight evidence check for a claimed quote/text_hint."""
+    quote = (fragment or "").strip().strip('"“”')
+    if len(quote) < 8:
+        return {
+            "evidence_status": "not_checked",
+            "evidence_page": None,
+            "evidence_note": "引用太短，未验证",
+        }
+
+    page_items = [
+        {"page": p.get("page"), "text": p.get("text") or ""}
+        for p in (pages or [])
+        if p.get("text")
+    ]
+    if not page_items:
+        return {
+            "evidence_status": "not_checked",
+            "evidence_page": None,
+            "evidence_note": "PDF 文本提取为空，无法验证",
+        }
+
+    # Check the preferred page first when the model supplied one.
+    if preferred_page is not None:
+        page_items.sort(key=lambda p: 0 if str(p["page"]) == str(preferred_page) else 1)
+
+    quote_lower = quote.lower()
+    for p in page_items:
+        text_lower = p["text"].lower()
+        pos = text_lower.find(quote_lower)
+        if pos >= 0:
+            raw = p["text"]
+            snippet = raw[max(0, pos - 60): min(len(raw), pos + len(quote) + 60)]
+            return {
+                "evidence_status": "verified",
+                "evidence_page": p["page"],
+                "evidence_match": snippet.strip(),
+                "evidence_note": "原文精确匹配",
+            }
+
+    norm_quote = _normalize_evidence_text(quote)
+    if len(norm_quote) >= 8:
+        for p in page_items:
+            if norm_quote in _normalize_evidence_text(p["text"]):
+                return {
+                    "evidence_status": "verified",
+                    "evidence_page": p["page"],
+                    "evidence_match": "",
+                    "evidence_note": "原文归一化匹配",
+                }
+
+    # Try partial chunks for longer quotes; useful when the model trims punctuation.
+    if len(quote) >= 60:
+        chunks = [quote[:80], quote[len(quote)//2: len(quote)//2 + 80], quote[-80:]]
+        for chunk in chunks:
+            norm_chunk = _normalize_evidence_text(chunk)
+            if len(norm_chunk) < 16:
+                continue
+            for p in page_items:
+                if norm_chunk in _normalize_evidence_text(p["text"]):
+                    return {
+                        "evidence_status": "verified",
+                        "evidence_page": p["page"],
+                        "evidence_match": "",
+                        "evidence_note": "原文片段匹配",
+                    }
+
+    return {
+        "evidence_status": "unverified",
+        "evidence_page": None,
+        "evidence_note": "未在提取文本中找到",
+    }
+
+
+def _attach_evidence_checks(result: dict, pages: List[Dict]) -> dict:
+    """Attach local evidence verification metadata to AI-generated citations."""
+    counts = {"verified": 0, "unverified": 0, "not_checked": 0}
+
+    def add_count(check: dict):
+        status = check.get("evidence_status", "not_checked")
+        counts[status] = counts.get(status, 0) + 1
+
+    for theme in result.get("themes") or []:
+        for ref in theme.get("page_refs") or []:
+            if isinstance(ref, dict):
+                check = _find_evidence(ref.get("text_hint", ""), pages, ref.get("page"))
+                ref.update(check)
+                add_count(check)
+
+        checked_citations = []
+        for item in theme.get("citations") or []:
+            if isinstance(item, str):
+                quote = item
+                obj = {"quote": quote}
+            elif isinstance(item, dict):
+                obj = item
+                quote = item.get("quote") or item.get("text") or item.get("citation") or ""
+            else:
+                quote = str(item)
+                obj = {"quote": quote}
+            check = _find_evidence(quote, pages)
+            obj.update(check)
+            add_count(check)
+            checked_citations.append(obj)
+        if checked_citations:
+            theme["citations"] = checked_citations
+
+    checked_key_citations = []
+    for item in result.get("key_citations") or []:
+        if isinstance(item, str):
+            obj = {"quote": item}
+            quote = item
+        elif isinstance(item, dict):
+            obj = item
+            quote = item.get("quote") or item.get("text") or item.get("citation") or ""
+        else:
+            obj = {"quote": str(item)}
+            quote = str(item)
+        check = _find_evidence(quote, pages)
+        obj.update(check)
+        add_count(check)
+        checked_key_citations.append(obj)
+    if checked_key_citations:
+        result["key_citations"] = checked_key_citations
+
+    result["_evidence"] = {
+        **counts,
+        "checked": sum(counts.values()),
+        "extracted_chars": sum(len(p.get("text") or "") for p in (pages or [])),
+    }
     return result
 
 

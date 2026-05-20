@@ -1,10 +1,10 @@
 @echo off
-title Paper Reader - Dev Mode
+title PaperKnowKnow - Dev Mode
 cd /d "%~dp0\.."
 
 echo.
 echo ==========================================
-echo    Paper Reader  --  Starting (Dev Mode)
+echo    PaperKnowKnow  --  Starting (Dev Mode)
 echo ==========================================
 echo.
 

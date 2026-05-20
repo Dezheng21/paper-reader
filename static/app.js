@@ -18,28 +18,28 @@ const INTENT_DEPTH = { quick: 'brief', deep: 'detailed', question: 'detailed', d
 
 const INTENT_DESCRIPTIONS = {
   quick: {
-    title: '快速了解核心观点',
-    body: '生成一份有个性的导读，帮你理解这篇论文在讲什么、为什么值得读。\n\n适合不打算精读原文、只需抓住精华的场景。\n\n输出：核心问题 · 主题叙述 · 阅读路径建议。',
+    title: '快速看懂',
+    body: '把论文压缩成高信号解读：它问什么、回答什么、为什么重要。\n\n适合不一定读原文，先判断这篇论文值不值得深入。\n\n输出：核心问题 · 关键结论 · 3-5 个要点 · 最小阅读路径。',
   },
   deep: {
-    title: '精读前的预热导航',
-    body: '侧重于梳理论文的逻辑结构和论证路径，便于精读时知道「重点在哪」「作者为什么这么写」。\n\n输出：论证脉络 · 关键段落导航 · 逻辑结构图。',
+    title: '精读导读',
+    body: '为精读原文做预热：先看清作者如何进入问题、怎样推进论证、哪些页面值得慢读。\n\n适合准备认真读原文、做课堂讨论或组会汇报前使用。\n\n输出：论证路线 · 关键转折 · 慢读页码 · 阅读提示。',
   },
   question: {
-    title: '带着问题去读',
-    body: '所有主题围绕你的具体问题重新组织，最相关的内容优先呈现。\n\n适合带着明确目的读论文，或想快速找到某个具体方面的答案。',
+    title: '带问题读',
+    body: '从你的具体问题出发，不做泛泛导读：先回答问题，再给论文证据，同时指出论文没有回答或无法证明的部分。\n\n适合已经知道自己想查什么，想让论文服务于某个问题的场景。',
   },
   deep_notes: {
-    title: '结构化精读笔记',
-    body: '参考资深研究员的阅读方式，提取完整逻辑骨架：\n\n• 3条核心创新贡献\n• 作者的问题意识与假设\n• 方法论逻辑流程（含关键参数）\n• 具体实验结果与对比数据\n• 局限性深度分析\n\n适合需要深度消化的核心文献。',
+    title: '文献笔记',
+    body: '提取可保存、可复用的论文笔记：\n\n• 核心贡献\n• 问题意识与假设\n• 方法流程\n• 关键结果\n• 局限与未来研究。',
   },
   critical: {
-    title: '批判性分析（审稿视角）',
-    body: '模拟顶级期刊审稿人，专门找「刺」：\n\n• 创新是真实突破还是增量？\n• 数据偏差和实验设计漏洞\n• 证据链与因果逻辑\n• 1-2个可能被拒稿的硬伤\n• 引用时的客观评价建议\n\n适合评估论文可信度、筛选文献综述材料。',
+    title: '审稿视角',
+    body: '模拟公正但严格的审稿人：先承认贡献，再评估创新是否成立、证据链是否支撑结论、方法是否有硬伤。\n\n适合评估可信度、筛选综述材料。',
   },
   research: {
-    title: '延伸研究与选题',
-    body: '基于论文内容，为你的研究课题挖掘切入点：\n\n• 核心方法迁移的可行性分析\n• 本文留下的研究空白\n• 3个具体可操作的实验方向\n• 推荐补充阅读的关键词\n\n需要你输入自己的研究课题。适合寻找切入点或准备组会汇报。',
+    title: '选题推进',
+    body: '把这篇论文和你的研究课题接起来：找到可迁移的方法、未解决的空白、可操作的选题或实验方向。\n\n需要你输入自己的研究课题。',
   },
 };
 let depth       = 'brief';
@@ -56,10 +56,10 @@ let _uiLang = 'zh';
 
 const TRANSLATIONS = {
   zh: {
-    title: '论文阅读助手', open_paper: '打开论文', analyze_btn: '分析结构',
-    no_file: '未打开文件', sidebar_label: '导读', export_btn: '↓ 导出',
+    title: 'PaperKnowKnow', open_paper: '打开论文', analyze_btn: '论文分析',
+    no_file: '未打开文件', sidebar_label: '分析结果', export_btn: '导出',
     analyzing: 'AI 正在分析论文…',
-    empty_state: '打开论文后点击<br>「分析结构」查看大纲',
+    empty_state: '打开论文后点击<br>「论文分析」查看解读',
     drop_zone: '拖入 PDF 或点击「打开论文」',
     copy: '复制', add_note: '添加笔记', add_note_ph: '添加笔记…',
     cancel: '取消', save_note: '保存笔记',
@@ -76,11 +76,11 @@ const TRANSLATIONS = {
     toast_export_first: '请先分析论文后再导出', toast_need_api_key2: '请先在设置中填写 API Key',
     toast_no_scanned: '未检测到扫描页面',
     page_label: '第 {n} 页', new_tab: '新论文',
-    settings_title: '设置', intent_title: '开始分析',
+    settings_title: '设置', intent_title: '选择分析方式',
     intent_purpose: '你读这篇文章的目的',
     intent_question_ph: '我想了解……',
     intent_tip: '鼠标悬停在左侧选项上查看详细说明',
-    intent_confirm: '开始分析',
+    intent_confirm: '开始论文分析',
     lib_title: '📚 书架', lib_search_ph: '搜索标题…',
     lib_empty: '还没有保存的论文', lib_loading: '加载中…', lib_failed: '加载失败',
     lib_no_match: '没有匹配的论文',
@@ -94,10 +94,10 @@ const TRANSLATIONS = {
     label_provider: 'AI 服务商', label_apikey: 'API Key',
     label_output_lang: '输出语言', label_model: '模型',
     label_model_opt: '（留空使用默认）', model_ph: '如 claude-sonnet-4-6、gpt-4o…',
-    tab_new_title: '新标签页', learnlang_tooltip: '开启后，AI 会在导读中额外提取 5-8 个核心术语，附上原文词汇、译文和释义。适合在阅读外文文献时同步学习专业词汇。会额外消耗少量 token。',
+    tab_new_title: '新标签页', learnlang_tooltip: '开启后，AI 会在分析结果中额外提取 5-8 个核心术语，附上原文词汇、译文和释义。适合在阅读外文文献时同步学习专业词汇。会额外消耗少量 token。',
   },
   en: {
-    title: 'Paper Reader', open_paper: 'Open Paper', analyze_btn: 'Analyze',
+    title: 'PaperKnowKnow', open_paper: 'Open Paper', analyze_btn: 'Analyze',
     no_file: 'No file open', sidebar_label: 'Guide', export_btn: '↓ Export',
     analyzing: 'AI is analyzing…',
     empty_state: 'Open a paper then click<br>"Analyze" to view outline',
@@ -138,10 +138,10 @@ const TRANSLATIONS = {
     tab_new_title: 'New tab', learnlang_tooltip: 'When enabled, AI will extract 5–8 key terms with original vocabulary, translation, and definitions. Useful for reading foreign-language papers. Uses a small amount of extra tokens.',
   },
   'zh-TW': {
-    title: '論文閱讀助手', open_paper: '開啟論文', analyze_btn: '分析結構',
-    no_file: '未開啟文件', sidebar_label: '導讀', export_btn: '↓ 匯出',
+    title: 'PaperKnowKnow', open_paper: '開啟論文', analyze_btn: '論文分析',
+    no_file: '未開啟文件', sidebar_label: '分析結果', export_btn: '匯出',
     analyzing: 'AI 正在分析論文…',
-    empty_state: '開啟論文後點擊<br>「分析結構」查看大綱',
+    empty_state: '開啟論文後點擊<br>「論文分析」查看分析結果',
     drop_zone: '拖入 PDF 或點擊「開啟論文」',
     copy: '複製', add_note: '新增筆記', add_note_ph: '新增筆記…',
     cancel: '取消', save_note: '儲存筆記',
@@ -176,13 +176,13 @@ const TRANSLATIONS = {
     label_provider: 'AI 服務商', label_apikey: 'API Key',
     label_output_lang: '輸出語言', label_model: '模型',
     label_model_opt: '（留空使用預設）', model_ph: '如 claude-sonnet-4-6、gpt-4o…',
-    tab_new_title: '新標籤頁', learnlang_tooltip: '開啟後，AI 會在導讀中額外提取 5-8 個核心術語，附上原文詞彙、譯文和釋義。適合閱讀外文文獻時同步學習專業詞彙。會額外消耗少量 token。',
+    tab_new_title: '新標籤頁', learnlang_tooltip: '開啟後，AI 會在分析結果中額外提取 5-8 個核心術語，附上原文詞彙、譯文和釋義。適合閱讀外文文獻時同步學習專業詞彙。會額外消耗少量 token。',
   },
   ja: {
-    title: '論文リーダー', open_paper: '論文を開く', analyze_btn: '構造分析',
-    no_file: 'ファイル未選択', sidebar_label: '解説', export_btn: '↓ エクスポート',
+    title: 'PaperKnowKnow', open_paper: '論文を開く', analyze_btn: '論文分析',
+    no_file: 'ファイル未選択', sidebar_label: '分析結果', export_btn: 'エクスポート',
     analyzing: 'AI が分析中…',
-    empty_state: 'PDFを開いて<br>「構造分析」をクリック',
+    empty_state: 'PDFを開いて<br>「論文分析」をクリック',
     drop_zone: 'PDFをドロップまたは「論文を開く」',
     copy: 'コピー', add_note: 'メモを追加', add_note_ph: 'メモを追加…',
     cancel: 'キャンセル', save_note: 'メモを保存',
@@ -220,10 +220,10 @@ const TRANSLATIONS = {
     tab_new_title: '新しいタブ', learnlang_tooltip: '有効にすると、AIが解説に5〜8つのキー用語を追加します（原文・訳・解説付き）。外国語論文を読む際の語彙学習に役立ちます。少量の追加トークンが必要です。',
   },
   ko: {
-    title: '논문 리더', open_paper: '논문 열기', analyze_btn: '구조 분석',
-    no_file: '파일 없음', sidebar_label: '가이드', export_btn: '↓ 내보내기',
+    title: 'PaperKnowKnow', open_paper: '논문 열기', analyze_btn: '논문 분석',
+    no_file: '파일 없음', sidebar_label: '분석 결과', export_btn: '내보내기',
     analyzing: 'AI가 분석 중…',
-    empty_state: 'PDF를 열고<br>「구조 분석」을 클릭하세요',
+    empty_state: 'PDF를 열고<br>「논문 분석」을 클릭하세요',
     drop_zone: 'PDF를 드롭하거나 「논문 열기」클릭',
     copy: '복사', add_note: '메모 추가', add_note_ph: '메모 추가…',
     cancel: '취소', save_note: '메모 저장',
@@ -261,7 +261,7 @@ const TRANSLATIONS = {
     tab_new_title: '새 탭', learnlang_tooltip: '활성화하면 AI가 5~8개의 핵심 용어를 원문, 번역, 설명과 함께 추출합니다. 외국어 논문 읽기에 유용합니다. 소량의 추가 토큰이 필요합니다.',
   },
   fr: {
-    title: "Lecteur d'articles", open_paper: 'Ouvrir', analyze_btn: 'Analyser',
+    title: 'PaperKnowKnow', open_paper: 'Ouvrir', analyze_btn: 'Analyser',
     no_file: 'Aucun fichier ouvert', sidebar_label: 'Guide', export_btn: '↓ Exporter',
     analyzing: "L'IA analyse…",
     empty_state: "Ouvrez un article puis cliquez<br>sur « Analyser »",
@@ -302,7 +302,7 @@ const TRANSLATIONS = {
     tab_new_title: 'Nouvel onglet', learnlang_tooltip: "Activé, l'IA extrait 5 à 8 termes clés avec vocabulaire original, traduction et définition. Utile pour les documents en langue étrangère. Consomme quelques tokens supplémentaires.",
   },
   de: {
-    title: 'Paper-Leser', open_paper: 'Öffnen', analyze_btn: 'Analysieren',
+    title: 'PaperKnowKnow', open_paper: 'Öffnen', analyze_btn: 'Analysieren',
     no_file: 'Keine Datei geöffnet', sidebar_label: 'Leitfaden', export_btn: '↓ Exportieren',
     analyzing: 'KI analysiert…',
     empty_state: 'Öffnen Sie ein Paper und klicken<br>Sie auf „Analysieren"',
@@ -343,7 +343,7 @@ const TRANSLATIONS = {
     tab_new_title: 'Neuer Tab', learnlang_tooltip: 'Wenn aktiviert, extrahiert die KI 5–8 Schlüsselbegriffe mit Originalvokabular, Übersetzung und Definition. Nützlich beim Lesen fremdsprachiger Dokumente. Verbraucht geringe zusätzliche Token.',
   },
   es: {
-    title: 'Lector de artículos', open_paper: 'Abrir', analyze_btn: 'Analizar',
+    title: 'PaperKnowKnow', open_paper: 'Abrir', analyze_btn: 'Analizar',
     no_file: 'Sin archivo abierto', sidebar_label: 'Guía', export_btn: '↓ Exportar',
     analyzing: 'IA analizando…',
     empty_state: 'Abra un artículo y haga<br>clic en «Analizar»',
@@ -384,7 +384,7 @@ const TRANSLATIONS = {
     tab_new_title: 'Nueva pestaña', learnlang_tooltip: 'Cuando está activado, la IA extrae 5-8 términos clave con vocabulario original, traducción y definición. Útil para leer documentos en idiomas extranjeros. Consume pocos tokens adicionales.',
   },
   vi: {
-    title: 'Trình đọc bài báo', open_paper: 'Mở bài báo', analyze_btn: 'Phân tích',
+    title: 'PaperKnowKnow', open_paper: 'Mở bài báo', analyze_btn: 'Phân tích',
     no_file: 'Chưa mở file', sidebar_label: 'Hướng dẫn', export_btn: '↓ Xuất',
     analyzing: 'AI đang phân tích…',
     empty_state: 'Mở bài báo rồi nhấn<br>«Phân tích» để xem',
@@ -426,11 +426,224 @@ const TRANSLATIONS = {
   },
 };
 
+const SURFACE_COPY = {
+  zh: {
+    intents: {
+      quick: { title: '快速看懂', badge: '速读', desc: '不一定读原文，先抓住问题、结论和意义', body: '把论文压缩成高信号解读：它问什么、回答什么、为什么重要。\n\n适合不一定读原文，先判断这篇论文值不值得深入。\n\n输出：核心问题 · 关键结论 · 3-5 个要点 · 最小阅读路径。' },
+      deep: { title: '精读导读', badge: '导读', desc: '准备读原文，先看清论证路线和重点页码', body: '为精读原文做预热：先看清作者如何进入问题、怎样推进论证、哪些页面值得慢读。\n\n适合准备认真读原文、做课堂讨论或组会汇报前使用。\n\n输出：论证路线 · 关键转折 · 慢读页码 · 阅读提示。' },
+      question: { title: '带问题读', badge: '问答', desc: '围绕你的问题，直接找答案、证据和边界', body: '从你的具体问题出发，不做泛泛导读：先回答问题，再给论文证据，同时指出论文没有回答或无法证明的部分。\n\n适合已经知道自己想查什么，想让论文服务于某个问题的场景。' },
+      deep_notes: { title: '文献笔记', badge: '深度', desc: '完整提取论文逻辑骨架、方法与结果', body: '提取可保存、可复用的论文笔记：\n\n• 核心贡献\n• 问题意识与假设\n• 方法流程\n• 关键结果\n• 局限与未来研究。' },
+      critical: { title: '审稿视角', badge: '审稿', desc: '公平评估贡献、证据链、方法限制和硬伤', body: '模拟公正但严格的审稿人：先承认贡献，再评估创新是否成立、证据链是否支撑结论、方法是否有硬伤。\n\n适合评估可信度、筛选综述材料。' },
+      research: { title: '选题推进', badge: '科研', desc: '结合你的课题，挖掘空白、迁移方法和选题', body: '把这篇论文和你的研究课题接起来：找到可迁移的方法、未解决的空白、可操作的选题或实验方向。\n\n需要你输入自己的研究课题。' },
+    },
+    know: { topic: '论文对话', select: '选择对话模式', chat: '问答', chatDesc: '解释论文内容，澄清不懂的地方', check: '检查理解', checkDesc: '用几个问题确认你是否掌握核心论证', start: '开始', done: '完成', close: '关闭', answerPh: '输入你的回答…', questionPh: '输入你的问题…', send: '发送 ›', summary: '小结', clarify: '需要澄清的地方', cont: '继续', noContext: '请先完成一次论文分析，再打开 KnowKnow 对话。', startFirst: '请先完成论文分析', startingErr: 'KnowKnow 启动失败：', thinking: 'KnowKnow 正在整理上下文…', replyErr: 'KnowKnow 回复失败：', startHelp: '先开始一轮对话，再使用 KnowKnow!!!。', helpThinking: 'KnowKnow 正在整理提示…', stuckDefault: '我现在有点卡住，不知道怎么继续。', helpErr: '这一步没接上：', helpFail: '提示生成失败', summaryFail: '总结失败', summaryDefault: '这轮主要是在整理理解。', next: '建议下一步：' },
+    lib: { organize: '整理', export: '导出', organizeTitle: '整理旧记录标签', exportTitle: '导出整个书架', organizeConfirm: '整理旧记录会补充分析方式、作者、年份标签，不会改动分析正文。现在开始吗？', organizing: '整理中', organizeFailed: '整理失败', organizeDone: '整理完成：扫描 {scanned} 条，更新 {changed} 条', savedAt: '保存于', addTag: '+ 标签', open: '打开', delete: '删除', tagPh: '输入标签回车确认', deleteConfirm: '确认删除此条记录？PDF 副本也会一并删除。', loadingPaper: '正在加载论文…', analysisLoadFailed: '分析数据加载失败' },
+    settings: { maxChars: '最大分析长度：', chars: '字符', maxInfo: '支持约 {pages} 页以内的论文完整分析 · 每次实际消耗约 {low}–{high} token（含输出）', maxWarn: '  ⚠️ 超大文档，消耗较多 token，建议仅在必要时使用', maxHint: '增大后可分析更长文档，但每次调用消耗更多 token', valid: '✓ API Key 有效' },
+    doc: { title: '文档体检', high: '文字层较完整', medium: '文字层不完整', low: '疑似扫描版', ocrYes: '本地 OCR 可用，会优先用于扫描页。', ocrNo: '本地 OCR 暂不可用；扫描页会退回到 AI 视觉/OCR。', pages: '页数', coverage: '文字层覆盖', scanned: '疑似扫描页', images: '图片/图表对象' },
+    misc: { prev: '上一个', next: '下一个', ocr: '对扫描版页面进行 AI OCR 识别', close: '关闭', fontDec: '缩小字体', fontInc: '放大字体', exportMd: '导出笔记为 Markdown', searchLoading: '搜索中…', loadingPdf: '正在加载 PDF…', uploadFailed: '上传失败', searchOriginal: '搜索原文位置…', unknownPaper: '未知论文', newPaper: '新论文', clickAnalyze: '点击「论文分析」<br>让 AI 解读论文', openAnalyze: '打开论文后点击<br>「论文分析」查看解读', researchPh: '我的研究课题是……（例如：利用大模型进行医疗诊断）' },
+  },
+  en: {
+    intents: {
+      quick: { title: 'Quick Read', badge: 'skim', desc: 'Get the question, conclusion, and significance first', body: 'Compress the paper into a high-signal reading: what it asks, what it answers, and why it matters.\n\nBest when you may not read the full paper yet.\n\nOutput: core question · key conclusion · 3-5 takeaways · minimal reading path.' },
+      deep: { title: 'Close Reading Guide', badge: 'guide', desc: 'Prepare for close reading with route and key pages', body: 'Prepare attention before close reading: how the author enters the problem, builds the argument, and where the slow-reading pages are.\n\nOutput: argument route · turning points · key pages · reading notes.' },
+      question: { title: 'Question-led Reading', badge: 'Q&A', desc: 'Use your question to find answers, evidence, and limits', body: 'Start from your own question: answer it, show the paper evidence, and clarify what the paper does not prove.\n\nBest when you know what you want from the paper.' },
+      deep_notes: { title: 'Literature Notes', badge: 'deep', desc: 'Extract argument structure, method, and results', body: 'Create reusable research notes:\n\n• Contributions\n• Problem and assumptions\n• Method flow\n• Key results\n• Limits and future work.' },
+      critical: { title: 'Review Lens', badge: 'review', desc: 'Assess contribution, evidence, methods, and weaknesses', body: 'Act like a fair but demanding reviewer: recognize the contribution, then test whether evidence and method support it.\n\nGood for credibility checks and literature screening.' },
+      research: { title: 'Research Direction', badge: 'research', desc: 'Find gaps, transferable methods, and topic angles', body: 'Connect this paper to your own research topic: transferable methods, unsolved gaps, and actionable directions.\n\nRequires your research topic.' },
+    },
+    know: { topic: 'Paper Dialogue', select: 'Choose a mode', chat: 'Q&A', chatDesc: 'Explain the paper and clarify confusing parts', check: 'Check Understanding', checkDesc: 'Use a few questions to verify the core argument', start: 'Start', done: 'Done', close: 'Close', answerPh: 'Type your answer…', questionPh: 'Type your question…', send: 'Send ›', summary: 'Summary', clarify: 'Needs clarification', cont: 'Continue', noContext: 'Analyze a paper first, then open KnowKnow.', startFirst: 'Please analyze a paper first', startingErr: 'KnowKnow failed to start: ', thinking: 'KnowKnow is organizing the context…', replyErr: 'KnowKnow reply failed: ', startHelp: 'Start a dialogue first, then use KnowKnow!!!.', helpThinking: 'KnowKnow is preparing a hint…', stuckDefault: 'I am stuck and not sure how to continue.', helpErr: 'Could not continue here: ', helpFail: 'Hint generation failed', summaryFail: 'Summary failed', summaryDefault: 'This round mainly organized understanding.', next: 'Suggested next step: ' },
+    lib: { organize: 'Organize', export: 'Export', organizeTitle: 'Organize old record tags', exportTitle: 'Export the whole library', organizeConfirm: 'Organize old records by adding method, author, and year tags. Analysis text will not be changed. Start now?', organizing: 'Organizing', organizeFailed: 'Organize failed', organizeDone: 'Organized: scanned {scanned}, updated {changed}', savedAt: 'saved at', addTag: '+ tag', open: 'Open', delete: 'Delete', tagPh: 'Type a tag and press Enter', deleteConfirm: 'Delete this record? The PDF copy will also be deleted.', loadingPaper: 'Loading paper…', analysisLoadFailed: 'Failed to load analysis data' },
+    settings: { maxChars: 'Max analysis length: ', chars: 'chars', maxInfo: 'Supports about {pages} pages · estimated cost {low}–{high} tokens per run including output', maxWarn: '  ⚠️ Very large document; use only when necessary', maxHint: 'Increasing this allows longer documents but costs more tokens per call', valid: '✓ API Key is valid' },
+    doc: { title: 'Document Check', high: 'Text layer mostly complete', medium: 'Text layer incomplete', low: 'Likely scanned', ocrYes: 'Local OCR is available and will be used for scanned pages first.', ocrNo: 'Local OCR is unavailable; scanned pages fall back to AI vision/OCR.', pages: 'Pages', coverage: 'Text coverage', scanned: 'Scanned pages', images: 'Images/charts' },
+    misc: { prev: 'Previous', next: 'Next', ocr: 'Run AI OCR on scanned pages', close: 'Close', fontDec: 'Decrease font size', fontInc: 'Increase font size', exportMd: 'Export notes as Markdown', searchLoading: 'Searching…', loadingPdf: 'Loading PDF…', uploadFailed: 'Upload failed', searchOriginal: 'Searching original location…', unknownPaper: 'Unknown paper', newPaper: 'New paper', clickAnalyze: 'Click “Analyze”<br>to let AI read the paper', openAnalyze: 'Open a paper then click<br>“Analyze” to view analysis', researchPh: 'My research topic is…', },
+  },
+  'zh-TW': {},
+  ja: {},
+  ko: {},
+  fr: {},
+  de: {},
+  es: {},
+  vi: {},
+};
+
+SURFACE_COPY['zh-TW'] = {
+  ...SURFACE_COPY.zh,
+  intents: {
+    quick: { title: '快速看懂', badge: '速讀', desc: '不一定讀原文，先抓住問題、結論和意義', body: SURFACE_COPY.zh.intents.quick.body },
+    deep: { title: '精讀導讀', badge: '導讀', desc: '準備讀原文，先看清論證路線和重點頁碼', body: SURFACE_COPY.zh.intents.deep.body },
+    question: { title: '帶問題讀', badge: '問答', desc: '圍繞你的問題，直接找答案、證據和邊界', body: SURFACE_COPY.zh.intents.question.body },
+    deep_notes: { title: '文獻筆記', badge: '深度', desc: '完整提取論文邏輯骨架、方法與結果', body: SURFACE_COPY.zh.intents.deep_notes.body },
+    critical: { title: '審稿視角', badge: '審稿', desc: '公平評估貢獻、證據鏈、方法限制和硬傷', body: SURFACE_COPY.zh.intents.critical.body },
+    research: { title: '選題推進', badge: '科研', desc: '結合你的課題，挖掘空白、遷移方法和選題', body: SURFACE_COPY.zh.intents.research.body },
+  },
+  know: { ...SURFACE_COPY.zh.know, topic: '論文對話', select: '選擇對話模式', check: '檢查理解', clarify: '需要澄清的地方', cont: '繼續' },
+  lib: { ...SURFACE_COPY.zh.lib, organize: '整理', export: '匯出', open: '開啟', delete: '刪除', addTag: '+ 標籤', savedAt: '儲存於' },
+  settings: { ...SURFACE_COPY.zh.settings, maxChars: '最大分析長度：', chars: '字元', valid: '✓ API Key 有效' },
+  doc: { ...SURFACE_COPY.zh.doc, title: '文件體檢' },
+};
+
+SURFACE_COPY.ko = {
+  ...SURFACE_COPY.en,
+  intents: {
+    quick: { title: '빠르게 이해', badge: '속독', desc: '원문을 다 읽기 전, 문제·결론·의미를 먼저 파악', body: '논문의 핵심을 압축합니다: 무엇을 묻고, 무엇을 답하며, 왜 중요한지.\n\n원문을 전부 읽기 전에 가치와 방향을 판단할 때 적합합니다.\n\n출력: 핵심 질문 · 핵심 결론 · 3-5개 요점 · 최소 읽기 경로.' },
+    deep: { title: '정독 가이드', badge: '가이드', desc: '정독 전에 논증 흐름과 중요한 페이지를 파악', body: '정독을 위한 사전 안내입니다. 저자가 문제에 어떻게 들어가고, 논증을 어떻게 전개하며, 어떤 페이지를 천천히 읽어야 하는지 보여줍니다.' },
+    question: { title: '질문 중심 읽기', badge: '문답', desc: '내 질문을 기준으로 답, 근거, 한계를 찾기', body: '사용자의 구체적 질문에서 시작합니다. 먼저 논문이 지지하는 답을 제시하고, 근거와 논문이 답하지 못하는 범위를 함께 보여줍니다.' },
+    deep_notes: { title: '문헌 노트', badge: '심화', desc: '논문의 논리 구조, 방법, 결과를 정리', body: '저장하고 다시 쓸 수 있는 문헌 노트를 만듭니다:\n\n• 핵심 기여\n• 문제의식과 가설\n• 방법 흐름\n• 주요 결과\n• 한계와 후속 연구.' },
+    critical: { title: '심사 관점', badge: '심사', desc: '기여, 근거, 방법, 약점을 균형 있게 평가', body: '공정하지만 엄격한 심사자처럼 봅니다. 기여를 먼저 인정한 뒤, 근거와 방법이 결론을 충분히 뒷받침하는지 점검합니다.' },
+    research: { title: '연구 주제 확장', badge: '연구', desc: '공백, 방법 이전, 새 연구 각도 찾기', body: '이 논문을 사용자의 연구 주제와 연결합니다. 이전 가능한 방법, 남은 공백, 실행 가능한 연구 방향을 찾습니다.\n\n사용자의 연구 주제가 필요합니다.' },
+  },
+  know: { topic: '논문 대화', select: '대화 모드 선택', chat: '문답', chatDesc: '논문 내용을 설명하고 헷갈리는 부분을 정리', check: '이해 점검', checkDesc: '몇 가지 질문으로 핵심 논증 이해를 확인', start: '시작', done: '완료', close: '닫기', answerPh: '답변을 입력하세요…', questionPh: '질문을 입력하세요…', send: '보내기 ›', summary: '요약', clarify: '더 명확히 볼 부분', cont: '계속', noContext: '먼저 논문 분석을 완료한 뒤 KnowKnow를 여세요.', startFirst: '먼저 논문 분석을 완료하세요', startingErr: 'KnowKnow 시작 실패: ', thinking: 'KnowKnow가 맥락을 정리하는 중…', replyErr: 'KnowKnow 응답 실패: ', startHelp: '먼저 대화를 시작한 뒤 KnowKnow!!!를 사용하세요.', helpThinking: 'KnowKnow가 힌트를 준비하는 중…', stuckDefault: '지금 막혀서 어떻게 이어가야 할지 모르겠습니다.', helpErr: '이 단계에서 이어가지 못했습니다: ', helpFail: '힌트 생성 실패', summaryFail: '요약 실패', summaryDefault: '이번 라운드는 이해를 정리하는 데 초점을 두었습니다.', next: '다음 제안: ' },
+  lib: { organize: '정리', export: '내보내기', organizeTitle: '기존 기록 태그 정리', exportTitle: '전체 라이브러리 내보내기', organizeConfirm: '기존 기록에 분석 방식, 저자, 연도 태그를 보완합니다. 분석 본문은 바꾸지 않습니다. 시작할까요?', organizing: '정리 중', organizeFailed: '정리 실패', organizeDone: '정리 완료: {scanned}개 확인, {changed}개 업데이트', savedAt: '저장됨', addTag: '+ 태그', open: '열기', delete: '삭제', tagPh: '태그 입력 후 Enter', deleteConfirm: '이 기록을 삭제할까요? PDF 복사본도 함께 삭제됩니다.', loadingPaper: '논문을 불러오는 중…', analysisLoadFailed: '분석 데이터를 불러오지 못했습니다' },
+  settings: { maxChars: '최대 분석 길이: ', chars: '자', maxInfo: '약 {pages}쪽까지 전체 분석 가능 · 예상 사용량 {low}–{high} tokens(출력 포함)', maxWarn: '  ⚠️ 매우 큰 문서입니다. 꼭 필요할 때만 사용하세요', maxHint: '값을 높이면 더 긴 문서를 분석할 수 있지만 호출마다 더 많은 token을 사용합니다', valid: '✓ API Key가 유효합니다' },
+  doc: { title: '문서 상태 확인', high: '텍스트 레이어 양호', medium: '텍스트 레이어 불완전', low: '스캔본 가능성 높음', ocrYes: '로컬 OCR 사용 가능. 스캔 페이지에 우선 적용됩니다.', ocrNo: '로컬 OCR 사용 불가. 스캔 페이지는 AI 비전/OCR로 처리됩니다.', pages: '쪽수', coverage: '텍스트 레이어', scanned: '스캔 의심 페이지', images: '이미지/도표 객체' },
+  misc: { prev: '이전', next: '다음', ocr: '스캔 페이지에 AI OCR 실행', close: '닫기', fontDec: '글자 작게', fontInc: '글자 크게', exportMd: '노트를 Markdown으로 내보내기', searchLoading: '검색 중…', loadingPdf: 'PDF 불러오는 중…', uploadFailed: '업로드 실패', searchOriginal: '원문 위치 검색 중…', unknownPaper: '제목 없음', newPaper: '새 논문', clickAnalyze: '「논문 분석」을 클릭해<br>AI 분석을 시작하세요', openAnalyze: '논문을 열고<br>「논문 분석」을 클릭하세요', researchPh: '내 연구 주제는…' },
+};
+
+SURFACE_COPY.ja = { ...SURFACE_COPY.en, know: { ...SURFACE_COPY.en.know, topic: '論文対話', select: '対話モードを選択', chat: 'Q&A', check: '理解チェック', start: '開始', done: '完了', close: '閉じる', send: '送信 ›', summary: '要約', clarify: '確認が必要な点', cont: '続ける' }, lib: { ...SURFACE_COPY.en.lib, organize: '整理', export: 'エクスポート', open: '開く', delete: '削除', addTag: '+ タグ', savedAt: '保存日時' }, settings: { ...SURFACE_COPY.en.settings, maxChars: '最大分析長: ', chars: '文字', valid: '✓ API Key は有効です' }, doc: { ...SURFACE_COPY.en.doc, title: 'ドキュメント確認' } };
+SURFACE_COPY.fr = { ...SURFACE_COPY.en, know: { ...SURFACE_COPY.en.know, topic: 'Dialogue papier', select: 'Choisir un mode', chat: 'Questions', check: 'Vérifier la compréhension', start: 'Démarrer', done: 'Terminé', close: 'Fermer', send: 'Envoyer ›', summary: 'Résumé', clarify: 'Point à clarifier', cont: 'Continuer' }, lib: { ...SURFACE_COPY.en.lib, organize: 'Organiser', export: 'Exporter', open: 'Ouvrir', delete: 'Supprimer', addTag: '+ tag', savedAt: 'enregistré le' }, settings: { ...SURFACE_COPY.en.settings, maxChars: 'Longueur max d’analyse : ', chars: 'caractères', valid: '✓ API Key valide' }, doc: { ...SURFACE_COPY.en.doc, title: 'État du document' } };
+SURFACE_COPY.de = { ...SURFACE_COPY.en, know: { ...SURFACE_COPY.en.know, topic: 'Paper-Dialog', select: 'Modus wählen', chat: 'Fragen', check: 'Verständnis prüfen', start: 'Start', done: 'Fertig', close: 'Schließen', send: 'Senden ›', summary: 'Zusammenfassung', clarify: 'Zu klären', cont: 'Weiter' }, lib: { ...SURFACE_COPY.en.lib, organize: 'Organisieren', export: 'Exportieren', open: 'Öffnen', delete: 'Löschen', addTag: '+ Tag', savedAt: 'gespeichert am' }, settings: { ...SURFACE_COPY.en.settings, maxChars: 'Max. Analyselänge: ', chars: 'Zeichen', valid: '✓ API Key gültig' }, doc: { ...SURFACE_COPY.en.doc, title: 'Dokumentenprüfung' } };
+SURFACE_COPY.es = { ...SURFACE_COPY.en, know: { ...SURFACE_COPY.en.know, topic: 'Diálogo del artículo', select: 'Elegir modo', chat: 'Preguntas', check: 'Comprobar comprensión', start: 'Iniciar', done: 'Listo', close: 'Cerrar', send: 'Enviar ›', summary: 'Resumen', clarify: 'Punto por aclarar', cont: 'Continuar' }, lib: { ...SURFACE_COPY.en.lib, organize: 'Organizar', export: 'Exportar', open: 'Abrir', delete: 'Eliminar', addTag: '+ etiqueta', savedAt: 'guardado el' }, settings: { ...SURFACE_COPY.en.settings, maxChars: 'Longitud máxima: ', chars: 'caracteres', valid: '✓ API Key válida' }, doc: { ...SURFACE_COPY.en.doc, title: 'Revisión del documento' } };
+SURFACE_COPY.vi = { ...SURFACE_COPY.en, know: { ...SURFACE_COPY.en.know, topic: 'Đối thoại bài báo', select: 'Chọn chế độ', chat: 'Hỏi đáp', check: 'Kiểm tra hiểu biết', start: 'Bắt đầu', done: 'Xong', close: 'Đóng', send: 'Gửi ›', summary: 'Tóm tắt', clarify: 'Điểm cần làm rõ', cont: 'Tiếp tục' }, lib: { ...SURFACE_COPY.en.lib, organize: 'Sắp xếp', export: 'Xuất', open: 'Mở', delete: 'Xóa', addTag: '+ thẻ', savedAt: 'đã lưu lúc' }, settings: { ...SURFACE_COPY.en.settings, maxChars: 'Độ dài phân tích tối đa: ', chars: 'ký tự', valid: '✓ API Key hợp lệ' }, doc: { ...SURFACE_COPY.en.doc, title: 'Kiểm tra tài liệu' } };
+
+SURFACE_COPY.zh.labels = {
+  currentMethod: '当前分析方法', coreQuestion: '核心问题', coreConclusion: '核心结论',
+  argumentRoute: '论证路线', evidenceChain: '证据链', conceptNodes: '概念节点', readingPath: '阅读路径',
+  noEvidence: '暂无证据链。建议重新分析或补充引用。', noConcepts: '暂无概念节点', noReadingPath: '暂无阅读路径。',
+  verified: '✓ 原文可验证', unverified: '⚠ 未在原文中找到', notChecked: '○ 未检查',
+  evidenceCheck: '证据检查', found: '条可在原文中找到', notFound: '条未找到', unchecked: '条未检查',
+  scannedWarn: '提示：PDF 文本提取很少，扫描版论文的验证可信度会下降。',
+  keyInsight: '核心发现', worthNoting: '值得留意', keyQuotes: '关键原文引用', readingAdvice: '阅读建议', vocab: '核心词汇',
+  contributions: '核心贡献', researchMethod: '研究方法', keyResults: '关键结果', limitsFuture: '局限与未来方向',
+  authorAdmits: '作者承认', blindSpot: '潜在盲点', innovationEval: '创新性评估', methodIssues: '方法问题',
+  hardWeaknesses: '主要硬伤', citationAdvice: '引用建议', transfer: '方法迁移分析', gaps: '研究空白',
+  experimentIdeas: '实验方向', furtherKeywords: '推荐延伸阅读', unknownTitle: '未知标题',
+  problem: '问题', method: '方法', finding: '发现', conclusion: '结论',
+  modeLiterature: '文献笔记重点', modeReview: '审稿视角重点', modeResearch: '选题推进重点',
+  modeQuestion: '带问题读重点', modeDeep: '精读导读重点',
+};
+SURFACE_COPY.en.labels = {
+  currentMethod: 'Analysis Method', coreQuestion: 'Core Question', coreConclusion: 'Core Conclusion',
+  argumentRoute: 'Argument Route', evidenceChain: 'Evidence Chain', conceptNodes: 'Concept Nodes', readingPath: 'Reading Path',
+  noEvidence: 'No evidence chain yet. Re-analyze or add citations.', noConcepts: 'No concept nodes yet', noReadingPath: 'No reading path yet.',
+  verified: '✓ Verified in source', unverified: '⚠ Not found in source', notChecked: '○ Not checked',
+  evidenceCheck: 'Evidence check', found: 'found in source', notFound: 'not found', unchecked: 'not checked',
+  scannedWarn: 'Note: PDF text extraction is sparse, so verification is less reliable for scanned papers.',
+  keyInsight: 'Key Insight', worthNoting: 'Worth Noting', keyQuotes: 'Key Source Quotes', readingAdvice: 'Reading Advice', vocab: 'Key Terms',
+  contributions: 'Core Contributions', researchMethod: 'Research Method', keyResults: 'Key Results', limitsFuture: 'Limits and Future Work',
+  authorAdmits: 'Author admits', blindSpot: 'Potential blind spot', innovationEval: 'Innovation Assessment', methodIssues: 'Method Issues',
+  hardWeaknesses: 'Main Weaknesses', citationAdvice: 'Citation Note', transfer: 'Method Transfer', gaps: 'Research Gaps',
+  experimentIdeas: 'Research Ideas', furtherKeywords: 'Further Reading Keywords', unknownTitle: 'Unknown title',
+  problem: 'Problem', method: 'Method', finding: 'Finding', conclusion: 'Conclusion',
+  modeLiterature: 'Literature Notes Focus', modeReview: 'Review Lens Focus', modeResearch: 'Research Direction Focus',
+  modeQuestion: 'Question-led Focus', modeDeep: 'Close Reading Focus',
+};
+SURFACE_COPY.ko.labels = {
+  currentMethod: '분석 방식', coreQuestion: '핵심 질문', coreConclusion: '핵심 결론',
+  argumentRoute: '논증 흐름', evidenceChain: '근거 사슬', conceptNodes: '개념 노드', readingPath: '읽기 경로',
+  noEvidence: '근거 사슬이 없습니다. 다시 분석하거나 인용을 보완하세요.', noConcepts: '개념 노드 없음', noReadingPath: '읽기 경로 없음',
+  verified: '✓ 원문에서 확인됨', unverified: '⚠ 원문에서 찾지 못함', notChecked: '○ 미검토',
+  evidenceCheck: '근거 확인', found: '개 원문 확인', notFound: '개 찾지 못함', unchecked: '개 미검토',
+  scannedWarn: '참고: PDF 텍스트 추출량이 적어 스캔본 검증 신뢰도가 낮을 수 있습니다.',
+  keyInsight: '핵심 발견', worthNoting: '주의할 점', keyQuotes: '핵심 원문 인용', readingAdvice: '읽기 제안', vocab: '핵심 용어',
+  contributions: '핵심 기여', researchMethod: '연구 방법', keyResults: '주요 결과', limitsFuture: '한계와 후속 연구',
+  authorAdmits: '저자가 인정한 한계', blindSpot: '잠재적盲점', innovationEval: '혁신성 평가', methodIssues: '방법 문제',
+  hardWeaknesses: '주요 약점', citationAdvice: '인용 제안', transfer: '방법 이전 분석', gaps: '연구 공백',
+  experimentIdeas: '연구 아이디어', furtherKeywords: '후속 읽기 키워드', unknownTitle: '제목 없음',
+  problem: '문제', method: '방법', finding: '발견', conclusion: '결론',
+  modeLiterature: '문헌 노트 초점', modeReview: '심사 관점 초점', modeResearch: '연구 주제 확장 초점',
+  modeQuestion: '질문 중심 읽기 초점', modeDeep: '정독 가이드 초점',
+};
+for (const code of ['zh-TW', 'ja', 'fr', 'de', 'es', 'vi']) {
+  SURFACE_COPY[code].labels = code === 'zh-TW' ? SURFACE_COPY.zh.labels : SURFACE_COPY.en.labels;
+}
+
+function ui() {
+  return SURFACE_COPY[_uiLang] || SURFACE_COPY.en || SURFACE_COPY.zh;
+}
+
+function lab(key) {
+  return ui().labels?.[key] || SURFACE_COPY.en.labels[key] || SURFACE_COPY.zh.labels[key] || key;
+}
+
 function t(key, vars) {
   const tr = TRANSLATIONS[_uiLang] || TRANSLATIONS.zh;
   let s = tr[key] ?? TRANSLATIONS.zh[key] ?? key;
   if (vars) Object.keys(vars).forEach(k => { s = s.replace(new RegExp(`\\{${k}\\}`, 'g'), vars[k]); });
   return s;
+}
+
+function fillVars(s, vars = {}) {
+  return String(s || '').replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+}
+
+function applyIntentUi() {
+  const c = ui();
+  document.querySelectorAll('.intent-opt').forEach(opt => {
+    const item = c.intents?.[opt.dataset.intent];
+    if (!item) return;
+    const title = opt.querySelector('.intent-opt-title');
+    const desc = opt.querySelector('.intent-opt-desc');
+    if (title) title.innerHTML = `${item.title} <span class="intent-opt-badge">${item.badge}</span>`;
+    if (desc) desc.textContent = item.desc;
+  });
+  showIntentDesc(currentIntent);
+}
+
+function applyKnowKnowUi() {
+  const k = ui().know;
+  const title = $('bpTopicName');
+  if (title && !_bpContext) title.textContent = k.topic;
+  const idle = document.querySelector('.bp-idle-text');
+  if (idle) idle.textContent = k.select;
+  const chat = $('bpModeChat');
+  if (chat) {
+    chat.querySelector('.bp-mode-name').textContent = k.chat;
+    chat.querySelector('.bp-mode-desc').textContent = k.chatDesc;
+  }
+  const check = $('bpModeBattle');
+  if (check) {
+    check.querySelector('.bp-mode-name').textContent = k.check;
+    check.querySelector('.bp-mode-desc').textContent = k.checkDesc;
+  }
+  const end = $('bpEndBtn');
+  if (end) end.title = k.done;
+  const close = document.querySelector('#battlePanel .bp-actions button:last-child');
+  if (close) close.title = k.close;
+  const send = $('bpSend');
+  if (send) send.textContent = k.send;
+  const sumTitle = document.querySelector('.bp-sum-title');
+  if (sumTitle) sumTitle.textContent = k.summary;
+  const sumLabel = document.querySelector('.bp-sum-field label');
+  if (sumLabel) sumLabel.textContent = k.clarify;
+  const cont = document.querySelector('#bpSummary .bp-start-btn');
+  if (cont) cont.textContent = k.cont;
+  selectBattleMode(_bpMode);
+}
+
+function applySurfaceI18n() {
+  const c = ui();
+  document.title = t('title');
+
+  // Search and reader controls.
+  $('pdfSearchPrev').title = c.misc.prev;
+  $('pdfSearchNext').title = c.misc.next;
+  $('pdfSearchOcr').title = c.misc.ocr;
+  $('pdfSearchClose').title = c.misc.close;
+  $('fontDecBtn').title = c.misc.fontDec;
+  $('fontIncBtn').title = c.misc.fontInc;
+  $('exportBtn').title = c.misc.exportMd;
+
+  // Intent, library, settings, and KnowKnow surfaces.
+  applyIntentUi();
+  $('libOrganizeBtn').textContent = c.lib.organize;
+  $('libOrganizeBtn').title = c.lib.organizeTitle;
+  $('libExportBtn').textContent = c.lib.export;
+  $('libExportBtn').title = c.lib.exportTitle;
+
+  const maxHint = document.querySelector('#maxCharsIn')?.closest('.field')?.querySelector('small');
+  if (maxHint) maxHint.textContent = c.settings.maxHint;
+  updateMaxCharsInfo();
+  applyKnowKnowUi();
 }
 
 function setUiLang(langVal) {
@@ -446,7 +659,8 @@ function setUiLang(langVal) {
   $('learnLangTooltip').textContent   = t('learnlang_tooltip');
   $('libraryText').textContent        = t('library');
   $('settingsText').textContent       = t('settings');
-  $('pdfToMdBtn').dataset.label       = 'PDF → MD';
+  $('pdfToMdBtn').dataset.label       = t('export_btn').replace('↓ ', '');
+  $('pdfToMdBtn').textContent         = t('export_btn').replace('↓ ', '');
 
   // Sidebar controls
   const scl = document.querySelector('.sidebar-controls-label');
@@ -523,6 +737,12 @@ function setUiLang(langVal) {
   // Tab new button title
   const tabNewBtn = $('tabNewBtn');
   if (tabNewBtn) tabNewBtn.title = t('tab_new_title');
+
+  applySurfaceI18n();
+  if (structure) {
+    syncEditableToStructure();
+    renderStructure(structure);
+  }
 }
 
 // ── Tabs ──────────────────────────────────────────────────────
@@ -532,7 +752,7 @@ let activeTabId = null;
 function _uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
 
 function makeTab(filename) {
-  return { id: _uid(), filename: filename || '新论文', fileId: null, libId: null,
+  return { id: _uid(), filename: filename || ui().misc.newPaper, fileId: null, libId: null,
            pdfUrl: null, pdfDoc: null, structure: null, annotations: [], scrollTop: 0 };
 }
 
@@ -579,9 +799,11 @@ async function switchToTab(id) {
 
   if (tab.structure) {
     renderStructure(tab.structure);
+    battleSetContext(tab.structure);
   } else {
-    sidebarBody.innerHTML = `<div class="empty-state"><div class="ei">🔍</div><p>点击「分析结构」<br>让 AI 解析论文大纲</p></div>`;
+    sidebarBody.innerHTML = `<div class="empty-state"><div class="ei">🔍</div><p>${ui().misc.clickAnalyze}</p></div>`;
     renderAnnotations();
+    battleClearContext();
   }
   renderTabBar();
 }
@@ -600,7 +822,8 @@ function openNewTab() {
   dropZone.style.display = '';
   pdfScroll.style.display = 'none';
   pageBadge.style.display = 'none';
-  sidebarBody.innerHTML = `<div class="empty-state"><div class="ei">📋</div><p>打开论文后点击<br>「分析结构」查看大纲</p></div>`;
+  sidebarBody.innerHTML = `<div class="empty-state"><div class="ei">📋</div><p>${ui().misc.openAnalyze}</p></div>`;
+  battleClearContext();
   renderTabBar();
 }
 
@@ -628,9 +851,12 @@ function renderTabBar() {
 
 const SETTINGS_KEY = 'pr_settings';
 const MODEL_HINTS = {
-  claude:  'claude-sonnet-4-6（推荐）\nclaude-opus-4-7（最强）\nclaude-haiku-4-5-20251001（最快）',
-  openai:  'gpt-4o（推荐）\ngpt-4o-mini（更快）',
-  gemini:  'gemini-2.5-flash（推荐）\ngemini-2.5-flash-lite（更快更便宜）\ngemini-2.5-pro（最强）',
+  claude:  'claude-sonnet-4-6 (recommended)\nclaude-opus-4-7 (strongest)\nclaude-haiku-4-5-20251001 (fastest)',
+  openai:  'gpt-4o (recommended)\ngpt-4o-mini (faster)',
+  gemini:  'gemini-2.5-flash (recommended)\ngemini-2.5-flash-lite (faster / cheaper)\ngemini-2.5-pro (strongest)',
+  deepseek:'deepseek-chat (recommended)\ndeepseek-reasoner (stronger reasoning)',
+  groq:    'llama-3.3-70b-versatile (recommended)\nllama-3.1-8b-instant (faster)',
+  mistral: 'mistral-small-latest (recommended)\nmistral-medium-latest (stronger)',
 };
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
@@ -668,6 +894,8 @@ const totPage         = $('totPage');
 const libraryBtn      = $('libraryBtn');
 const libraryOverlay  = $('libraryOverlay');
 const libraryClose    = $('libraryClose');
+const libOrganizeBtn  = $('libOrganizeBtn');
+const libExportBtn    = $('libExportBtn');
 const libBody         = $('libBody');
 const libSearch       = $('libSearch');
 const learnLangBtn    = $('learnLangBtn');
@@ -712,6 +940,7 @@ let _selText = '', _selPage = 1; // current selection for selBar
 let _searchMatches = [];  // [{pageNum, spanEl}]
 let _searchIdx     = -1;
 let _searchTerm    = '';
+let _searchSeq     = 0;
 
 // ── Annotations ───────────────────────────────────────────────────────────────
 function onTextSelected(e) {
@@ -789,28 +1018,88 @@ function closePdfSearch() {
 }
 
 function clearSearchHighlights() {
-  pdfPages.querySelectorAll('.hl-search').forEach(el => {
-    el.classList.remove('hl-search', 'current');
+  pdfPages.querySelectorAll('.hl-search, .hl').forEach(el => {
+    el.classList.remove('hl-search', 'current', 'hl');
   });
 }
 
+function normalizeFindText(s) {
+  return String(s || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[\s\u00a0]+/g, '')
+    .replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+function spanRangesForQuery(spans, query) {
+  const candidates = [];
+  const qNorm = normalizeFindText(query);
+  if (qNorm.length >= 2) candidates.push(qNorm);
+
+  String(query || '')
+    .split(/[\s,.;:，。；：、()[\]{}"'“”‘’!?！？-]+/)
+    .map(normalizeFindText)
+    .filter(w => w.length >= 3)
+    .slice(0, 8)
+    .forEach(w => candidates.push(w));
+
+  let full = '';
+  const ranges = [];
+  for (const span of spans) {
+    const start = full.length;
+    const norm = normalizeFindText(span.textContent);
+    full += norm;
+    ranges.push({ span, start, end: full.length });
+  }
+
+  for (const needle of candidates) {
+    const pos = full.indexOf(needle);
+    if (pos >= 0) {
+      const end = pos + needle.length;
+      const hit = ranges
+        .filter(r => r.end > pos && r.start < end)
+        .map(r => r.span);
+      if (hit.length) return hit;
+    }
+  }
+  return [];
+}
+
+function highlightSpanGroup(spans, cls = 'hl-search') {
+  spans.forEach(s => s.classList.add(cls));
+  return spans[0] || null;
+}
+
 async function executeSearch(term) {
+  const seq = ++_searchSeq;
   clearSearchHighlights();
   _searchMatches = [];
   _searchIdx = -1;
   _searchTerm = term;
   if (!term || !pdfDoc) { pdfSearchCount.textContent = ''; return; }
 
-  const lc = term.toLowerCase();
   const layers = pdfPages.querySelectorAll('.textLayer');
   layers.forEach(layer => {
-    layer.querySelectorAll('span').forEach(span => {
-      if (span.textContent.toLowerCase().includes(lc)) {
-        span.classList.add('hl-search');
-        _searchMatches.push({ pageNum: parseInt(layer.dataset.page) || 1, el: span });
-      }
-    });
+    const spans = Array.from(layer.querySelectorAll('span'));
+    const hits = spanRangesForQuery(spans, term);
+    if (hits.length) {
+      highlightSpanGroup(hits, 'hl-search');
+      _searchMatches.push({ pageNum: parseInt(layer.dataset.page) || 1, el: hits[0], els: hits, query: term });
+    }
   });
+
+  if (_searchMatches.length === 0) {
+    pdfSearchCount.textContent = ui().misc.searchLoading;
+    const backendMatches = await searchDocumentBackend(term);
+    if (seq !== _searchSeq) return;
+    _searchMatches = backendMatches.map(m => ({
+      pageNum: m.page,
+      el: null,
+      snippet: m.snippet || '',
+      query: term,
+      fallbackQuery: m.snippet || '',
+    }));
+  }
 
   if (_searchMatches.length === 0) {
     pdfSearchCount.textContent = t('search_no_result');
@@ -820,15 +1109,34 @@ async function executeSearch(term) {
   navigateSearchMatch();
 }
 
-function navigateSearchMatch() {
+async function searchDocumentBackend(term) {
+  const id = currentLibId || fileId;
+  if (!id) return [];
+  const source = currentLibId ? 'library' : 'upload';
+  try {
+    const r = await fetch(`/search_doc/${id}?source=${source}&q=${encodeURIComponent(term)}`);
+    if (!r.ok) return [];
+    const data = await r.json();
+    return data.matches || [];
+  } catch (_) {
+    return [];
+  }
+}
+
+async function navigateSearchMatch() {
   if (!_searchMatches.length) return;
-  _searchMatches.forEach(m => m.el.classList.remove('current'));
+  _searchMatches.forEach(m => (m.els || [m.el]).forEach(el => el?.classList.remove('current')));
   const match = _searchMatches[_searchIdx];
-  match.el.classList.add('current');
-  match.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   pdfSearchCount.textContent = t('search_count', { a: _searchIdx + 1, b: _searchMatches.length });
   pdfSearchPrev.disabled = _searchIdx <= 0;
   pdfSearchNext.disabled = _searchIdx >= _searchMatches.length - 1;
+  if (match.el) {
+    (match.els || [match.el]).forEach(el => el?.classList.add('current'));
+    match.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  } else {
+    const ok = await goToPage(match.pageNum, match.query || _searchTerm);
+    if (!ok && match.fallbackQuery) await goToPage(match.pageNum, match.fallbackQuery);
+  }
 }
 
 async function saveAnnotation() {
@@ -915,11 +1223,40 @@ async function openLibrary() {
   }
 }
 
+async function organizeLibrary() {
+  const c = ui().lib;
+  if (!confirm(c.organizeConfirm)) return;
+  const oldText = libOrganizeBtn?.textContent || c.organize;
+  if (libOrganizeBtn) {
+    libOrganizeBtn.disabled = true;
+    libOrganizeBtn.textContent = c.organizing;
+  }
+  try {
+    const r = await fetch('/library/organize', { method: 'POST' });
+    if (!r.ok) throw new Error(c.organizeFailed);
+    const data = await r.json();
+    toast(fillVars(c.organizeDone, { scanned: data.scanned || 0, changed: data.changed || 0 }), 'success');
+    const list = await fetch('/library');
+    libAllItems = await list.json();
+    renderLibraryItems(libAllItems, libSearch.value.trim());
+  } catch (e) {
+    toast(e.message || c.organizeFailed);
+  } finally {
+    if (libOrganizeBtn) {
+      libOrganizeBtn.disabled = false;
+      libOrganizeBtn.textContent = oldText;
+    }
+  }
+}
+
 function renderLibraryItems(items, query) {
+  const c = ui().lib;
   const filtered = query
     ? items.filter(it =>
         (it.title || '').toLowerCase().includes(query.toLowerCase()) ||
         (it.filename || '').toLowerCase().includes(query.toLowerCase()) ||
+        (it.authors || '').toLowerCase().includes(query.toLowerCase()) ||
+        (it.analysis_method || '').toLowerCase().includes(query.toLowerCase()) ||
         (it.tags || []).some(t => t.toLowerCase().includes(query.toLowerCase()))
       )
     : items;
@@ -935,14 +1272,14 @@ function renderLibraryItems(items, query) {
     const date = it.saved_at ? it.saved_at.replace('T', ' ').slice(0, 16) : '';
     return `<div class="lib-card" data-id="${it.id}">
       <div class="lib-card-title">${esc(it.title || it.filename)}</div>
-      <div class="lib-card-meta">${esc(it.authors || '')}${it.year ? ' · ' + esc(it.year) : ''}${date ? ' · 保存于 ' + date : ''}</div>
+      <div class="lib-card-meta">${esc(it.authors || '')}${it.year ? ' · ' + esc(it.year) : ''}${it.analysis_method ? ' · ' + esc(it.analysis_method) : ''}${date ? ' · ' + c.savedAt + ' ' + date : ''}</div>
       <div class="lib-card-footer">
         <div class="lib-tags" id="tags_${it.id}">${tagsHTML}
-          <span class="lib-add-tag" onclick="event.stopPropagation();showTagInput('${it.id}')">+ 标签</span>
+          <span class="lib-add-tag" onclick="event.stopPropagation();showTagInput('${it.id}')">${esc(c.addTag)}</span>
         </div>
         <div class="lib-card-actions">
-          <button class="lib-btn lib-btn-load" onclick="event.stopPropagation();loadFromLibrary('${it.id}','${esc(it.filename)}')">打开</button>
-          <button class="lib-btn lib-btn-del"  onclick="event.stopPropagation();deleteLibraryItem('${it.id}')">删除</button>
+          <button class="lib-btn lib-btn-load" onclick="event.stopPropagation();loadFromLibrary('${it.id}','${esc(it.filename)}')">${esc(c.open)}</button>
+          <button class="lib-btn lib-btn-del"  onclick="event.stopPropagation();deleteLibraryItem('${it.id}')">${esc(c.delete)}</button>
         </div>
       </div>
     </div>`;
@@ -955,7 +1292,7 @@ function showTagInput(libId) {
   const addBtn = container.querySelector('.lib-add-tag');
   const inp = document.createElement('input');
   inp.className = 'lib-tag-input';
-  inp.placeholder = '输入标签回车确认';
+  inp.placeholder = ui().lib.tagPh;
   inp.onclick = e => e.stopPropagation();
   inp.onkeydown = async e => {
     if (e.key === 'Enter') {
@@ -987,13 +1324,13 @@ async function addTag(libId, tag) {
 
 async function loadFromLibrary(libId, filename) {
   libraryOverlay.style.display = 'none';
-  showLoading('正在加载论文…');
+  showLoading(ui().lib.loadingPaper);
   try {
     const [analysisResp, annotResp] = await Promise.all([
       fetch(`/library/${libId}/analysis`),
       fetch(`/library/${libId}/annotations`),
     ]);
-    if (!analysisResp.ok) throw new Error('分析数据加载失败');
+    if (!analysisResp.ok) throw new Error(ui().lib.analysisLoadFailed);
     // Open new tab if current tab already has a PDF, otherwise reuse it
     { const at = getActiveTab(); if (at?.pdfUrl) { saveToTab(at); const nt = makeTab(filename); tabs.push(nt); activeTabId = nt.id; } else if (at) { at.filename = filename; } }
     structure = await analysisResp.json();
@@ -1005,6 +1342,7 @@ async function loadFromLibrary(libId, filename) {
     analyzeBtn.disabled = false; pdfToMdBtn.disabled = false;
     await renderPDF(`/library/${libId}/pdf`);
     renderStructure(structure);
+    battleSetContext(structure);
     renderTabBar();
     toast(t('toast_lib_loaded'), 'success');
   } catch (e) {
@@ -1015,7 +1353,7 @@ async function loadFromLibrary(libId, filename) {
 }
 
 async function deleteLibraryItem(libId) {
-  if (!confirm('确认删除此条记录？PDF 副本也会一并删除。')) return;
+  if (!confirm(ui().lib.deleteConfirm)) return;
   await fetch(`/library/${libId}`, { method: 'DELETE' });
   libAllItems = libAllItems.filter(it => it.id !== libId);
   renderLibraryItems(libAllItems, libSearch.value.trim());
@@ -1037,6 +1375,41 @@ async function autoSaveToLibrary(analysis) {
   } catch {
     // silent — saving is best-effort
   }
+}
+
+async function loadDocumentProfile(id, source = 'upload') {
+  if (!id) return;
+  try {
+    const r = await fetch(`/document_profile/${id}?source=${source}`);
+    if (!r.ok) return;
+    const profile = await r.json();
+    renderDocumentProfile(profile);
+  } catch (_) {}
+}
+
+function renderDocumentProfile(profile) {
+  if (!profile || structure) return;
+  const c = ui().doc;
+  const label = profile.reliability === 'high'
+    ? c.high
+    : profile.reliability === 'medium'
+      ? c.medium
+      : c.low;
+  const ocr = profile.local_ocr?.available
+    ? c.ocrYes
+    : c.ocrNo;
+  sidebarBody.innerHTML = `<div class="doc-health">
+    <div class="doc-health-title">${esc(c.title)}</div>
+    <span class="doc-health-badge ${profile.reliability}">${label}</span>
+    <div class="doc-health-note">${esc(profile.recommendation || '')}</div>
+    <div class="doc-health-grid">
+      <div class="doc-health-stat"><b>${profile.page_count || 0}</b><span>${esc(c.pages)}</span></div>
+      <div class="doc-health-stat"><b>${Math.round((profile.text_coverage || 0) * 100)}%</b><span>${esc(c.coverage)}</span></div>
+      <div class="doc-health-stat"><b>${profile.scanned_pages || 0}</b><span>${esc(c.scanned)}</span></div>
+      <div class="doc-health-stat"><b>${profile.image_count || 0}</b><span>${esc(c.images)}</span></div>
+    </div>
+    <div class="doc-health-note">${esc(ocr)}</div>
+  </div>`;
 }
 
 // ── Settings helpers ──────────────────────────────────────────────────────────
@@ -1115,7 +1488,7 @@ function init() {
     currentIntent = opt.dataset.intent;
     const needsInput = currentIntent === 'question' || currentIntent === 'research';
     intentQuestion.style.display = needsInput ? 'block' : 'none';
-    intentQuestion.placeholder = currentIntent === 'research' ? '我的研究课题是……（例如：利用大模型进行医疗诊断）' : '我想了解……';
+    intentQuestion.placeholder = currentIntent === 'research' ? ui().misc.researchPh : t('intent_question_ph');
     showIntentDesc(currentIntent);
   });
   intentOpts.addEventListener('mouseover', e => {
@@ -1190,6 +1563,8 @@ function init() {
   // Library
   libraryBtn.addEventListener('click', openLibrary);
   libraryClose.addEventListener('click', () => libraryOverlay.style.display = 'none');
+  libOrganizeBtn?.addEventListener('click', organizeLibrary);
+  libExportBtn?.addEventListener('click', () => { window.location.href = '/library/export'; });
   libraryOverlay.addEventListener('click', e => { if (e.target === libraryOverlay) libraryOverlay.style.display = 'none'; });
   libSearch.addEventListener('input', () => renderLibraryItems(libAllItems, libSearch.value.trim()));
 
@@ -1249,7 +1624,7 @@ async function searchCitationInPDF(text) {
   if (!text) return;
   if (!pdfDoc) { toast(t('toast_need_pdf')); return; }
   const snapDoc = pdfDoc;
-  showLoading('搜索原文位置…');
+  showLoading(ui().misc.searchOriginal);
   // Try progressively shorter prefixes for robustness across PDF text extraction
   const candidates = [
     text.slice(0, 40),
@@ -1258,6 +1633,16 @@ async function searchCitationInPDF(text) {
   ].map(s => s.trim().toLowerCase()).filter(s => s.length > 3);
 
   try {
+    const backendMatches = await searchDocumentBackend(text);
+    if (backendMatches.length) {
+      const pg = backendMatches[0].page;
+      hideLoading();
+      const ok = await goToPage(pg, text);
+      if (!ok && backendMatches[0].snippet) await goToPage(pg, backendMatches[0].snippet);
+      toast(t('toast_found_page', { n: pg }), 'success');
+      return;
+    }
+
     const n = snapDoc.numPages;
     for (let pg = 1; pg <= n; pg++) {
       const page = await snapDoc.getPage(pg);
@@ -1297,7 +1682,7 @@ function exportNotes() {
   if (d.key_insight) { nl('## 核心发现'); nl(''); nl(d.key_insight); nl(''); }
 
   // Guide intro
-  if (d.guide_intro) { nl('## 导读'); nl(''); nl(d.guide_intro); nl(''); }
+  if (d.guide_intro) { nl('## 分析导语'); nl(''); nl(d.guide_intro); nl(''); }
 
   // Themes
   if (d.themes?.length) {
@@ -1320,7 +1705,7 @@ function exportNotes() {
     d.contributions.forEach(c => nl(`- ${typeof c === 'string' ? c : JSON.stringify(c)}`));
     nl('');
   }
-  if (d.methodology_flow) { nl('## 方法论'); nl(''); nl(typeof d.methodology_flow === 'string' ? d.methodology_flow : JSON.stringify(d.methodology_flow)); nl(''); }
+  if (d.methodology_flow) { nl('## 研究方法'); nl(''); nl(typeof d.methodology_flow === 'string' ? d.methodology_flow : JSON.stringify(d.methodology_flow)); nl(''); }
   if (d.key_results?.length) {
     nl('## 关键结果'); nl('');
     d.key_results.forEach(r => {
@@ -1341,7 +1726,7 @@ function exportNotes() {
   // critical extras
   if (d.innovation_verdict) { nl('## 创新性评估'); nl(''); nl(`**结论：** ${d.innovation_verdict}`); if (d.innovation_analysis) nl(d.innovation_analysis); nl(''); }
   if (d.fatal_weaknesses?.length) {
-    nl('## 致命弱点'); nl('');
+    nl('## 主要硬伤'); nl('');
     d.fatal_weaknesses.forEach(w => nl(`- **${w.weakness}**${w.impact ? '  \n  ' + w.impact : ''}`));
     nl('');
   }
@@ -1431,7 +1816,7 @@ async function downloadPdfAsMd() {
     toast(t('toast_md_failed') + e.message);
   } finally {
     pdfToMdBtn.disabled = false;
-    pdfToMdBtn.textContent = 'PDF → MD';
+    pdfToMdBtn.textContent = pdfToMdBtn.dataset.label || '导出';
   }
 }
 
@@ -1468,8 +1853,8 @@ async function saveGuideEdits() {
 }
 
 function showIntentDesc(intent) {
-  const d = INTENT_DESCRIPTIONS[intent];
-  if (!d) { intentDesc.innerHTML = '<div class="tip-empty">鼠标悬停在左侧选项上查看详细说明</div>'; return; }
+  const d = ui().intents?.[intent] || INTENT_DESCRIPTIONS[intent];
+  if (!d) { intentDesc.innerHTML = `<div class="tip-empty">${t('intent_tip')}</div>`; return; }
   intentDesc.innerHTML = `<div class="tip-title">${esc(d.title)}</div><div>${esc(d.body).replace(/\n/g, '<br>')}</div>`;
 }
 
@@ -1490,7 +1875,8 @@ async function handleValidate() {
   validateBtn.textContent = t('validate_btn_ing');
   clearValidateResult();
   try {
-    const r = await fetch('/validate', {
+    const endpoint = ['deepseek', 'groq', 'mistral'].includes(providerSel.value) ? '/validate_ext' : '/validate';
+    const r = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider: providerSel.value, api_key: key, model: modelIn.value }),
@@ -1499,7 +1885,7 @@ async function handleValidate() {
     if (data.valid) {
       validateResult.textContent = data.warning
         ? '⚠ ' + data.warning
-        : '✓ API Key 有效';
+        : ui().settings.valid;
       validateResult.className = 'validate-result ok';
     } else {
       validateResult.textContent = '✗ ' + (data.error || t('validate_failed'));
@@ -1515,8 +1901,10 @@ async function handleValidate() {
 }
 
 function updateMaxCharsInfo() {
+  const c = ui().settings;
   const chars = parseInt(maxCharsIn.value);
-  maxCharsVal.textContent = chars.toLocaleString() + ' 字符';
+  maxCharsLabel.firstChild.textContent = c.maxChars;
+  maxCharsVal.textContent = chars.toLocaleString() + ' ' + c.chars;
   const pages = Math.round(chars / 2500);
   const tokensIn = Math.round(chars / 4);
   // output tokens vary by analysis type; ~8K–20K is typical
@@ -1525,8 +1913,8 @@ function updateMaxCharsInfo() {
   const fmtLow  = totalLow  >= 1000 ? Math.round(totalLow  / 1000) + 'K' : totalLow;
   const fmtHigh = totalHigh >= 1000 ? Math.round(totalHigh / 1000) + 'K' : totalHigh;
   let warning = '';
-  if (chars > 200000) warning = '  ⚠️ 超大文档，消耗较多 token，建议仅在必要时使用';
-  maxCharsInfo.textContent = `支持约 ${pages} 页以内的论文完整分析 · 每次实际消耗约 ${fmtLow}–${fmtHigh} token（含输出）${warning}`;
+  if (chars > 200000) warning = c.maxWarn;
+  maxCharsInfo.textContent = fillVars(c.maxInfo, { pages, low: fmtLow, high: fmtHigh }) + warning;
 }
 
 function updateHints() {
@@ -1543,12 +1931,12 @@ function handleSave() {
 
 // ── File upload → render PDF ──────────────────────────────────────────────────
 async function handleFile(file) {
-  showLoading('正在加载 PDF…');
+  showLoading(ui().misc.loadingPdf);
   try {
     const fd = new FormData();
     fd.append('file', file);
     const r = await fetch('/upload', { method: 'POST', body: fd });
-    if (!r.ok) throw new Error((await r.json()).detail || '上传失败');
+    if (!r.ok) throw new Error((await r.json()).detail || ui().misc.uploadFailed);
     const data = await r.json();
     // Open new tab if current tab already has a PDF, otherwise reuse it
     { const at = getActiveTab(); if (at?.pdfUrl) { saveToTab(at); const nt = makeTab(file.name); tabs.push(nt); activeTabId = nt.id; } else if (at) { at.filename = file.name; } }
@@ -1562,9 +1950,11 @@ async function handleFile(file) {
     sidebarBody.innerHTML = `
       <div class="empty-state">
         <div class="ei">🔍</div>
-        <p>点击「分析结构」<br>让 AI 解析论文大纲</p>
+        <p>${ui().misc.clickAnalyze}</p>
       </div>`;
+    battleClearContext();
     await renderPDF(`/pdf/${fileId}`);
+    loadDocumentProfile(fileId, 'upload');
     renderTabBar();
   } catch (e) {
     toast(t('toast_load_failed') + e.message);
@@ -1794,12 +2184,13 @@ function updateBadge() {
 // ── Navigate to page ──────────────────────────────────────────────────────────
 async function goToPage(pageNum, textHint) {
   const wrap = pdfPages.querySelector(`[data-page-num="${pageNum}"]`);
-  if (!wrap) return;
-  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!wrap) return false;
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
   curPage.textContent = pageNum;
 
   // Remove any existing highlights
   document.querySelectorAll('.text-highlight').forEach(el => el.remove());
+  document.querySelectorAll('.textLayer span.hl').forEach(el => el.classList.remove('hl'));
 
   if (textHint && pdfDoc) {
     const snapDoc = pdfDoc;
@@ -1812,11 +2203,13 @@ async function goToPage(pageNum, textHint) {
       wrap.classList.add('flash');
       setTimeout(() => wrap.classList.remove('flash'), 2000);
     }
+    return found;
   } else {
     wrap.classList.remove('flash');
     void wrap.offsetWidth;
     wrap.classList.add('flash');
     setTimeout(() => wrap.classList.remove('flash'), 2000);
+    return true;
   }
 }
 
@@ -1836,35 +2229,18 @@ async function highlightTextOnPage(pageNum, textHint, wrap) {
     if (!layer) return false;
 
     const spans = Array.from(layer.querySelectorAll('span'));
-    const hint  = textHint.toLowerCase().trim();
+    const hitSpans = spanRangesForQuery(spans, textHint);
+    if (!hitSpans.length) return false;
 
-    // Strategy 1: sliding-window phrase match
-    let matchIdx = -1;
-    for (let i = 0; i < spans.length; i++) {
-      const win = spans.slice(i, i + 10).map(s => s.textContent).join(' ');
-      if (win.toLowerCase().includes(hint)) { matchIdx = i; break; }
-    }
-
-    // Strategy 2: any significant word from hint
-    if (matchIdx === -1) {
-      const words = hint.split(/\s+/).filter(w => w.length > 4);
-      outer: for (const word of words) {
-        for (let i = 0; i < spans.length; i++) {
-          if (spans[i].textContent.toLowerCase().includes(word)) { matchIdx = i; break outer; }
-        }
-      }
-    }
-
-    if (matchIdx === -1) return false;
-
-    const matchSpan = spans[matchIdx];
+    const matchSpan = hitSpans[0];
     const matchTop  = parseFloat(matchSpan.style.top);
     const fontSize  = parseFloat(matchSpan.style.fontSize) || 12;
     const band      = fontSize * 3;
 
-    const toHL = spans.filter(s => Math.abs(parseFloat(s.style.top) - matchTop) <= band);
+    const sameLine = spans.filter(s => Math.abs(parseFloat(s.style.top) - matchTop) <= band);
+    const toHL = hitSpans.length >= 2 ? hitSpans : sameLine;
     toHL.forEach(s => s.classList.add('hl'));
-    setTimeout(() => toHL.forEach(s => s.classList.remove('hl')), 3500);
+    setTimeout(() => toHL.forEach(s => s.classList.remove('hl')), 7000);
 
     matchSpan.scrollIntoView({ block: 'center', behavior: 'smooth' });
     return true;
@@ -1873,12 +2249,6 @@ async function highlightTextOnPage(pageNum, textHint, wrap) {
 
 // ── AI analysis ───────────────────────────────────────────────────────────────
 async function handleAnalyze() {
-  const s = loadSettings();
-  if (!s.apiKey) {
-    toast(t('toast_need_api_key2'));
-    settingsOverlay.style.display = 'flex';
-    return;
-  }
   if (!fileId && !currentLibId) { toast(t('toast_need_pdf')); return; }
 
   // Reset intent dialog state
@@ -1894,11 +2264,23 @@ async function handleAnalyze() {
 
 async function doAnalyze() {
   const s = loadSettings();
+  if (!s.apiKey) {
+    toast(t('toast_need_api_key2'));
+    settingsOverlay.style.display = 'flex';
+    return;
+  }
   const provider = s.provider || 'claude';
-  const DEFAULT_MODELS = { claude: 'claude-sonnet-4-6', openai: 'gpt-4o', gemini: 'gemini-2.5-flash' };
+  const DEFAULT_MODELS = {
+    claude: 'claude-sonnet-4-6',
+    openai: 'gpt-4o',
+    gemini: 'gemini-2.5-flash',
+    deepseek: 'deepseek-chat',
+    groq: 'llama-3.3-70b-versatile',
+    mistral: 'mistral-small-latest',
+  };
   const modelName = s.model || DEFAULT_MODELS[provider] || provider;
   const analyzeTime = new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-  const INTENT_LABELS = { quick: '快速了解', deep: '精读导航', question: '定向问答', deep_notes: '结构化笔记', critical: '批判性分析', research: '延伸研究' };
+  const INTENT_LABELS = { quick: '快速看懂', deep: '精读导读', question: '带问题读', deep_notes: '文献笔记', critical: '审稿视角', research: '选题推进' };
 
   showAnalyzeStatus(t('analyzing'));
   analyzeBtn.disabled = true; pdfToMdBtn.disabled = true;
@@ -1932,6 +2314,7 @@ async function doAnalyze() {
       model:    modelName,
       provider,
       intent:   INTENT_LABELS[currentIntent] || currentIntent,
+      question: currentQuestion || '',
       time:     analyzeTime,
       tokens:   usage.total || 0,
       input:    usage.input || 0,
@@ -1940,6 +2323,7 @@ async function doAnalyze() {
     { const tab = getActiveTab(); if (tab) tab.structure = structure; }
     renderStructure(structure);
     if (fileId) autoSaveToLibrary(structure);
+    battleSetContext(structure);
   } catch (e) {
     toast(t('toast_analyze_failed') + e.message);
   } finally {
@@ -1959,14 +2343,186 @@ function renderStructure(data) {
 }
 
 // ── New guide renderer ────────────────────────────────────────────────────────
+function evidenceBadge(item) {
+  const status = item?.evidence_status || 'not_checked';
+  const suffix = item?.evidence_page ? ` · 第 ${item.evidence_page} 页` : '';
+  const label = status === 'verified'
+    ? `${lab('verified')}${suffix}`
+    : status === 'unverified'
+      ? lab('unverified')
+      : lab('notChecked');
+  const note = item?.evidence_note ? ` title="${esc(item.evidence_note)}"` : '';
+  return `<span class="evidence-badge ${status}"${note}>${label}</span>`;
+}
+
+function evidenceClass(item) {
+  const status = item?.evidence_status || '';
+  return status ? ` ${status}` : '';
+}
+
+function normalizeCitationItem(item) {
+  if (typeof item === 'string') return { quote: item };
+  if (!item) return { quote: '' };
+  return { ...item, quote: item.quote || item.text || item.citation || '' };
+}
+
+function _shortText(s, n = 86) {
+  s = String(s || '').replace(/\s+/g, ' ').trim();
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+function buildVisualOverview(data) {
+  const themes = (data.themes || []).slice(0, 5);
+  const firstTheme = themes[0] || {};
+  const middleTheme = themes[Math.min(1, Math.max(0, themes.length - 1))] || firstTheme;
+  const lastTheme = themes[themes.length - 1] || firstTheme;
+
+  const logicSteps = data.visual_summary?.logic_steps || [
+    { label: lab('problem'), text: data.core_question || firstTheme.heading || '' },
+    { label: lab('method'), text: data.methodology_flow || middleTheme.heading || '' },
+    { label: lab('finding'), text: data.key_insight || firstTheme.highlight || firstTheme.narrative || '' },
+    { label: lab('conclusion'), text: data.skeptics_note || lastTheme.highlight || lastTheme.heading || '' },
+  ];
+
+  const evidenceChain = data.visual_summary?.evidence_chain || themes.map(t => {
+    const refs = t.page_refs || [];
+    const c = normalizeCitationItem((t.citations || [])[0]);
+    const status = c.evidence_status || refs[0]?.evidence_status || 'not_checked';
+    return {
+      claim: t.highlight || t.heading || t.narrative || '',
+      status,
+      page: c.evidence_page || refs[0]?.evidence_page || refs[0]?.page || '',
+    };
+  }).filter(x => x.claim).slice(0, 5);
+
+  const conceptMapRaw = data.visual_summary?.concept_map || themes
+    .map(t => t.heading)
+    .filter(Boolean)
+    .slice(0, 8);
+  const conceptMap = conceptMapRaw.map(c => typeof c === 'string'
+    ? c
+    : `${c.from || ''}${c.relation ? ' → ' + c.relation : ''}${c.to ? ' → ' + c.to : ''}`.trim()
+  ).filter(Boolean);
+
+  return { logicSteps, evidenceChain, conceptMap };
+}
+
+function renderModeSpecificOverview(data) {
+  const intent = data._meta?.intent || data.analysis_method || '';
+  const str = v => {
+    if (!v && v !== 0) return '';
+    if (typeof v === 'string') return v;
+    return v.text || v.content || v.description || v.finding || v.point || JSON.stringify(v);
+  };
+  if (intent.includes('文献笔记')) {
+    const contrib = (data.contributions || []).slice(0, 3).map(str).filter(Boolean);
+    const results = (data.key_results || []).slice(0, 3).map(r => str(r.finding || r.result || r)).filter(Boolean);
+    return `<div class="ov-card ov-card-wide"><div class="ov-label">${lab('modeLiterature')}</div>
+      <div class="concept-chips">${contrib.map(c => `<span class="concept-chip">${esc(_shortText(c, 34))}</span>`).join('') || `<span class="concept-chip">${lab('noConcepts')}</span>`}</div>
+      ${data.methodology_flow ? `<div class="ov-text" style="margin-top:8px"><b>${lab('researchMethod')}：</b>${esc(_shortText(str(data.methodology_flow), 130))}</div>` : ''}
+      ${results.length ? `<div class="ov-text" style="margin-top:6px"><b>${lab('keyResults')}：</b>${esc(results.map(r => _shortText(r, 36)).join('；'))}</div>` : ''}
+    </div>`;
+  }
+  if (intent.includes('审稿视角')) {
+    const issues = (data.methodology_issues || []).slice(0, 3).map(i => i.issue || i.detail || '').filter(Boolean);
+    const fatal = (data.fatal_weaknesses || []).slice(0, 2).map(w => w.weakness || '').filter(Boolean);
+    return `<div class="ov-card ov-card-wide"><div class="ov-label">${lab('modeReview')}</div>
+      <div class="ov-text"><b>${lab('innovationEval')}：</b>${esc(data.innovation_verdict || '')}</div>
+      ${data.innovation_analysis ? `<div class="ov-text" style="margin-top:6px">${esc(_shortText(data.innovation_analysis, 150))}</div>` : ''}
+      ${issues.length ? `<div class="ov-text" style="margin-top:6px"><b>${lab('methodIssues')}：</b>${esc(issues.join('；'))}</div>` : ''}
+      ${fatal.length ? `<div class="ov-text" style="margin-top:6px"><b>${lab('hardWeaknesses')}：</b>${esc(fatal.join('；'))}</div>` : ''}
+    </div>`;
+  }
+  if (intent.includes('研究推进') || intent.includes('选题推进')) {
+    const gaps = (data.research_gaps || []).slice(0, 3).map(str).filter(Boolean);
+    const ideas = (data.experiment_ideas || []).slice(0, 3).map(i => i.name || i.hypothesis || '').filter(Boolean);
+    return `<div class="ov-card ov-card-wide"><div class="ov-label">${lab('modeResearch')}</div>
+      ${data.transfer_analysis ? `<div class="ov-text"><b>${lab('transfer')}：</b>${esc(_shortText(data.transfer_analysis, 150))}</div>` : ''}
+      ${gaps.length ? `<div class="ov-text" style="margin-top:6px"><b>${lab('gaps')}：</b>${esc(gaps.map(g => _shortText(g, 36)).join('；'))}</div>` : ''}
+      ${ideas.length ? `<div class="concept-chips" style="margin-top:8px">${ideas.map(i => `<span class="concept-chip">${esc(_shortText(i, 30))}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }
+  if (intent.includes('带问题阅读') || intent.includes('带问题读')) {
+    return `<div class="ov-card ov-card-wide"><div class="ov-label">${lab('modeQuestion')}</div><div class="ov-text">${ui().intents.question.desc}</div></div>`;
+  }
+  if (intent.includes('精读导航') || intent.includes('精读导读')) {
+    return `<div class="ov-card ov-card-wide"><div class="ov-label">${lab('modeDeep')}</div><div class="ov-text">${ui().intents.deep.desc}</div></div>`;
+  }
+  return '';
+}
+
+function renderOverviewDashboard(data) {
+  const ov = buildVisualOverview(data);
+  const intent = data._meta?.intent || data.analysis_method || '未标注';
+  const logicHTML = ov.logicSteps.map(step => `<div class="logic-step">
+    <div class="logic-step-label">${esc(step.label || '')}</div>
+    <div class="logic-step-text">${esc(_shortText(step.text, 120))}</div>
+  </div>`).join('');
+
+  const evidenceHTML = ov.evidenceChain.map(row => {
+    const badge = evidenceBadge({ evidence_status: row.status || 'not_checked', evidence_page: row.page || null });
+    return `<div class="evidence-row">
+      <div class="evidence-claim">${esc(_shortText(row.claim, 88))}</div>
+      ${badge}
+    </div>`;
+  }).join('');
+
+  const conceptsHTML = ov.conceptMap.length
+    ? ov.conceptMap.map(c => `<span class="concept-chip">${esc(_shortText(c, 26))}</span>`).join('')
+    : `<span class="concept-chip">${lab('noConcepts')}</span>`;
+
+  const readMapHTML = (data.read_this_if || []).slice(0, 3).map(p => {
+    const locs = p.locations
+      ? p.locations.map(l => `第${l.page}页`).join('、')
+      : (p.pages || []).map(pg => `第${pg}页`).join('、');
+    return `<div class="read-map-item"><span class="read-map-goal">${esc(p.goal || '')}</span><span>${esc(locs || '')}</span></div>`;
+  }).join('');
+
+  return `<div class="overview-dashboard">
+    <div class="ov-grid">
+      <div class="ov-card ov-card-wide">
+        <div class="ov-label">${lab('currentMethod')}</div>
+        <div class="ov-text"><b>${esc(intent)}</b></div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-label">${lab('coreQuestion')}</div>
+        <div class="ov-text">${esc(_shortText(data.core_question, 120))}</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-label">${lab('coreConclusion')}</div>
+        <div class="ov-text">${esc(_shortText(data.key_insight, 120))}</div>
+      </div>
+      <div class="ov-card ov-card-wide">
+        <div class="ov-label">${lab('argumentRoute')}</div>
+        <div class="logic-flow">${logicHTML}</div>
+      </div>
+      <div class="ov-card ov-card-wide">
+        <div class="ov-label">${lab('evidenceChain')}</div>
+        <div class="evidence-chain">${evidenceHTML || `<div class="ov-text">${lab('noEvidence')}</div>`}</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-label">${lab('conceptNodes')}</div>
+        <div class="concept-chips">${conceptsHTML}</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-label">${lab('readingPath')}</div>
+        <div class="read-map-mini">${readMapHTML || `<div class="ov-text">${lab('noReadingPath')}</div>`}</div>
+      </div>
+      ${renderModeSpecificOverview(data)}
+    </div>
+  </div>`;
+}
+
 function renderGuide(data) {
   let html = '';
 
   // Paper header
   html += `<div class="guide-paper-info">
-    <div class="guide-paper-title">${esc(data.title || '未知标题')}</div>
+    <div class="guide-paper-title">${esc(data.title || lab('unknownTitle'))}</div>
     <div class="guide-paper-meta">${esc(data.authors || '')}${data.year ? ' · ' + esc(data.year) : ''}</div>
   </div>`;
+
+  html += renderOverviewDashboard(data);
 
   // Analysis metadata footnote
   if (data._meta) {
@@ -1983,6 +2539,16 @@ function renderGuide(data) {
     </div>`;
   }
 
+  if (data._evidence && data._evidence.checked) {
+    const ev = data._evidence;
+    html += `<div class="evidence-summary">
+      ${lab('evidenceCheck')}：✓ ${ev.verified || 0} ${lab('found')}
+      ${ev.unverified ? ` · ⚠ ${ev.unverified} ${lab('notFound')}` : ''}
+      ${ev.not_checked ? ` · ○ ${ev.not_checked} ${lab('unchecked')}` : ''}
+      ${ev.extracted_chars < 200 ? `<br>${lab('scannedWarn')}` : ''}
+    </div>`;
+  }
+
   // Core question
   if (data.core_question) {
     html += `<div class="core-question" contenteditable="true" data-path="core_question">${esc(data.core_question)}</div>`;
@@ -1991,7 +2557,7 @@ function renderGuide(data) {
   // Key insight
   if (data.key_insight) {
     html += `<div class="key-insight">
-      <span class="key-insight-label">核心发现</span>
+      <span class="key-insight-label">${lab('keyInsight')}</span>
       <div contenteditable="true" data-path="key_insight">${esc(data.key_insight)}</div>
     </div>`;
   }
@@ -2006,18 +2572,21 @@ function renderGuide(data) {
     html += `<div class="themes-section">`;
     data.themes.forEach(theme => {
       const refsHTML = (theme.page_refs || []).map(r =>
-        `<button class="page-ref-btn" data-page="${r.page}" data-hint="${esc(r.text_hint || '')}">第 ${r.page} 页${r.label ? ' · ' + esc(r.label) : ''}</button>`
+        `<button class="page-ref-btn${evidenceClass(r)}" data-page="${r.page}" data-hint="${esc(r.text_hint || '')}" title="${esc(r.evidence_note || r.text_hint || '')}">第 ${r.page} 页${r.label ? ' · ' + esc(r.label) : ''}</button>`
       ).join('');
 
-      const citesHTML = (theme.citations || []).map(q =>
-        `<div class="citation-item">
+      const citesHTML = (theme.citations || []).map(raw => {
+        const c = normalizeCitationItem(raw);
+        const q = c.quote || '';
+        return `<div class="citation-item">
           <span class="citation-text">${esc(q)}</span>
+          ${evidenceBadge(c)}
           <div class="citation-actions">
             <button class="cite-btn cite-copy" data-q="${esc(q)}">复制</button>
             <button class="cite-btn cite-find" data-q="${esc(q)}">PDF 定位</button>
           </div>
-        </div>`
-      ).join('');
+        </div>`;
+      }).join('');
 
       html += `<div class="theme-item" data-id="${theme.id}">
         <div class="theme-head" onclick="toggleTheme('${theme.id}')">
@@ -2040,20 +2609,22 @@ function renderGuide(data) {
   // Skeptic's note
   if (data.skeptics_note) {
     html += `<div class="skeptics-note">
-      <span class="skeptics-label">值得留意</span>
+      <span class="skeptics-label">${lab('worthNoting')}</span>
       <div contenteditable="true" data-path="skeptics_note">${esc(data.skeptics_note)}</div>
     </div>`;
   }
 
   // Key citations (global)
   if (data.key_citations?.length) {
-    html += `<div class="mode-section" style="margin:8px 14px 0"><span class="section-label">关键原文引用</span>
+    html += `<div class="mode-section" style="margin:8px 14px 0"><span class="section-label">${lab('keyQuotes')}</span>
       <div class="citations-list">${data.key_citations.map(c => {
-        const q = typeof c === 'string' ? c : (c.quote || '');
+        const ci = normalizeCitationItem(c);
+        const q = ci.quote || '';
         const lbl = typeof c === 'string' ? '' : (c.label || '');
         return `<div class="citation-item">
           ${lbl ? `<span class="citation-label">${esc(lbl)}</span>` : ''}
           <span class="citation-text">${esc(q)}</span>
+          ${evidenceBadge(ci)}
           <div class="citation-actions">
             <button class="cite-btn cite-copy" data-q="${esc(q)}">复制</button>
             <button class="cite-btn cite-find" data-q="${esc(q)}">PDF 定位</button>
@@ -2067,7 +2638,7 @@ function renderGuide(data) {
   // Reading paths
   if (data.read_this_if && data.read_this_if.length) {
     html += `<div class="read-paths">
-      <div class="read-paths-label">阅读建议</div>`;
+      <div class="read-paths-label">${lab('readingAdvice')}</div>`;
     data.read_this_if.forEach(path => {
       // Support new locations format and old pages format
       let locsHTML = '';
@@ -2091,7 +2662,7 @@ function renderGuide(data) {
   // Vocab cards (language learning mode)
   if (data.key_terms && data.key_terms.length) {
     html += `<div class="vocab-section">
-      <span class="vocab-section-label">核心词汇</span>`;
+      <span class="vocab-section-label">${lab('vocab')}</span>`;
     data.key_terms.forEach(term => {
       html += `<div class="vocab-card">
         <div class="vocab-original">${esc(term.original)}</div>
@@ -2111,15 +2682,15 @@ function renderGuide(data) {
     return v.text || v.content || v.description || v.contribution || v.finding || v.point || JSON.stringify(v);
   };
   if (data.contributions?.length) {
-    html += `<div class="mode-section"><span class="section-label">核心贡献</span>
+    html += `<div class="mode-section"><span class="section-label">${lab('contributions')}</span>
       <ul class="contributions-list">${data.contributions.map(c => `<li contenteditable="true">${esc(_str(c))}</li>`).join('')}</ul></div>`;
   }
   if (data.methodology_flow) {
-    html += `<div class="mode-section"><span class="section-label">方法论</span>
+    html += `<div class="mode-section"><span class="section-label">${lab('researchMethod')}</span>
       <div class="methodology-text" contenteditable="true" data-path="methodology_flow">${esc(_str(data.methodology_flow))}</div></div>`;
   }
   if (data.key_results?.length) {
-    html += `<div class="mode-section"><span class="section-label">关键结果</span>` +
+    html += `<div class="mode-section"><span class="section-label">${lab('keyResults')}</span>` +
       data.key_results.map(r => {
         if (typeof r === 'string') return `<div class="result-item"><div class="result-finding">${esc(r)}</div></div>`;
         const finding = _str(r.finding || r.result || r.description || r);
@@ -2134,50 +2705,50 @@ function renderGuide(data) {
   }
   if (data.limitations_future) {
     const lf = data.limitations_future;
-    html += `<div class="mode-section"><span class="section-label">局限与未来方向</span>
-      ${lf.author_admits ? `<div class="issue-item"><div class="issue-title">作者承认</div><div class="issue-detail" contenteditable="true" data-path="lf_author">${esc(lf.author_admits)}</div></div>` : ''}
-      ${lf.expert_critique ? `<div class="issue-item"><div class="issue-title">潜在盲点</div><div class="issue-detail" contenteditable="true" data-path="lf_expert">${esc(lf.expert_critique)}</div></div>` : ''}
+    html += `<div class="mode-section"><span class="section-label">${lab('limitsFuture')}</span>
+      ${lf.author_admits ? `<div class="issue-item"><div class="issue-title">${lab('authorAdmits')}</div><div class="issue-detail" contenteditable="true" data-path="lf_author">${esc(lf.author_admits)}</div></div>` : ''}
+      ${lf.expert_critique ? `<div class="issue-item"><div class="issue-title">${lab('blindSpot')}</div><div class="issue-detail" contenteditable="true" data-path="lf_expert">${esc(lf.expert_critique)}</div></div>` : ''}
     </div>`;
   }
 
   // ── critical extra sections ──
   if (data.innovation_verdict) {
     const vc = data.innovation_verdict.includes('真正') ? 'verdict-good' : data.innovation_verdict.includes('增量') ? 'verdict-mid' : 'verdict-bad';
-    html += `<div class="mode-section"><span class="section-label">创新性评估</span>
+    html += `<div class="mode-section"><span class="section-label">${lab('innovationEval')}</span>
       <div class="innovation-verdict ${vc}">${esc(data.innovation_verdict)}</div>
       ${data.innovation_analysis ? `<div class="issue-detail" contenteditable="true" data-path="innovation_analysis">${esc(data.innovation_analysis)}</div>` : ''}
     </div>`;
   }
   if (data.methodology_issues?.length) {
-    html += `<div class="mode-section"><span class="section-label">方法论问题</span>` +
+    html += `<div class="mode-section"><span class="section-label">${lab('methodIssues')}</span>` +
       data.methodology_issues.map(i => `<div class="issue-item">
         <div class="issue-title">${esc(i.issue)}</div>
         <div class="issue-detail">${esc(i.detail)}</div>
       </div>`).join('') + `</div>`;
   }
   if (data.fatal_weaknesses?.length) {
-    html += `<div class="mode-section"><span class="section-label">致命弱点</span>` +
+    html += `<div class="mode-section"><span class="section-label">${lab('hardWeaknesses')}</span>` +
       data.fatal_weaknesses.map(w => `<div class="fatal-item">
         <div class="fatal-weakness">${esc(w.weakness)}</div>
         ${w.impact ? `<div class="fatal-impact">${esc(w.impact)}</div>` : ''}
       </div>`).join('') + `</div>`;
   }
   if (data.citation_note) {
-    html += `<div class="mode-section"><span class="section-label">引用建议</span>
+    html += `<div class="mode-section"><span class="section-label">${lab('citationAdvice')}</span>
       <div class="citation-box" contenteditable="true" data-path="citation_note">${esc(data.citation_note)}</div></div>`;
   }
 
   // ── research extra sections ──
   if (data.transfer_analysis) {
-    html += `<div class="mode-section"><span class="section-label">方法迁移分析</span>
+    html += `<div class="mode-section"><span class="section-label">${lab('transfer')}</span>
       <div class="methodology-text" contenteditable="true" data-path="transfer_analysis">${esc(data.transfer_analysis)}</div></div>`;
   }
   if (data.research_gaps?.length) {
-    html += `<div class="mode-section"><span class="section-label">研究空白</span>` +
+    html += `<div class="mode-section"><span class="section-label">${lab('gaps')}</span>` +
       data.research_gaps.map(g => `<div class="gap-item">${esc(g)}</div>`).join('') + `</div>`;
   }
   if (data.experiment_ideas?.length) {
-    html += `<div class="mode-section"><span class="section-label">实验方向</span>` +
+    html += `<div class="mode-section"><span class="section-label">${lab('experimentIdeas')}</span>` +
       data.experiment_ideas.map(idea => `<div class="idea-item">
         <div class="idea-name">💡 ${esc(idea.name)}</div>
         <div class="idea-hypothesis">${esc(idea.hypothesis)}</div>
@@ -2185,11 +2756,11 @@ function renderGuide(data) {
       </div>`).join('') + `</div>`;
   }
   if (data.ref_keywords?.length) {
-    html += `<div class="mode-section"><span class="section-label">推荐延伸阅读</span>
+    html += `<div class="mode-section"><span class="section-label">${lab('furtherKeywords')}</span>
       <div class="ref-keywords">${data.ref_keywords.map(k => `<span class="ref-tag">${esc(k)}</span>`).join('')}</div></div>`;
   }
 
-  sidebarBody.innerHTML = html;
+  sidebarBody.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
   renderAnnotations();
 }
 
@@ -2236,7 +2807,7 @@ function renderLegacyTree(data) {
   }
 
   html += data.sections.map(buildSection).join('');
-  sidebarBody.innerHTML = html;
+  sidebarBody.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
   renderAnnotations();
 }
 
@@ -2282,6 +2853,234 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+// ── KnowKnow paper dialogue panel ────────────────────────────────────────────
+let _bpOpen = false;
+let _bpSessionId = '';
+let _bpContext = null;
+let _bpMode = 'chat';
+
+function _bp(id) { return document.getElementById(id); }
+
+function _bpPaperContext(analysis) {
+  if (!analysis) return {};
+  return {
+    title: analysis.title || currentFilename || ui().misc.unknownPaper,
+    core_question: analysis.core_question || '',
+    key_insight: analysis.key_insight || '',
+    themes: (analysis.themes || []).slice(0, 6).map(t => ({
+      heading: t.heading || '',
+      narrative: t.narrative || '',
+      highlight: t.highlight || '',
+      citations: (t.citations || []).slice(0, 3).map(c => normalizeCitationItem(c).quote).filter(Boolean),
+    })),
+  };
+}
+
+function _bpDialogLanguage() {
+  return topbarLangSel?.value || 'Chinese';
+}
+
+function battleSetContext(analysis) {
+  _bpContext = analysis || null;
+  const btn = _bp('battleOpenBtn');
+  if (btn) btn.style.display = _bpContext ? '' : 'none';
+  const title = _bp('bpTopicName');
+  if (title && _bpContext) title.textContent = (_bpContext.title || currentFilename || ui().know.topic).slice(0, 24);
+}
+
+function battleClearContext() {
+  _bpContext = null;
+  _bpSessionId = '';
+  const btn = _bp('battleOpenBtn');
+  if (btn) btn.style.display = 'none';
+  const panel = _bp('battlePanel');
+  if (panel) panel.classList.remove('open');
+  _bpOpen = false;
+}
+
+function toggleBattlePanel() {
+  if (!_bpContext) {
+    toast(ui().know.noContext);
+    return;
+  }
+  const panel = _bp('battlePanel');
+  if (!panel) return;
+  _bpOpen = !_bpOpen;
+  panel.classList.toggle('open', _bpOpen);
+  if (_bpOpen && !_bpSessionId) _bpShowIdle();
+}
+
+function selectBattleMode(mode) {
+  const k = ui().know;
+  _bpMode = mode === 'battle' ? 'battle' : 'chat';
+  _bp('bpModeChat')?.classList.toggle('active', _bpMode === 'chat');
+  _bp('bpModeBattle')?.classList.toggle('active', _bpMode === 'battle');
+  const tag = _bp('bpModeTag');
+  if (tag) tag.textContent = _bpMode === 'battle' ? k.check : k.chat;
+  const start = _bp('bpStartBtn');
+  if (start) start.textContent = k.start;
+  const input = _bp('bpInput');
+  if (input) input.placeholder = _bpMode === 'battle' ? k.answerPh : k.questionPh;
+}
+
+function _bpShowIdle() {
+  _bp('bpIdle').style.display = '';
+  _bp('bpChat').style.display = 'none';
+  _bp('bpSummary').style.display = 'none';
+  _bp('bpDino').style.display = 'none';
+  selectBattleMode(_bpMode);
+}
+
+function _bpShowChat() {
+  _bp('bpIdle').style.display = 'none';
+  _bp('bpChat').style.display = '';
+  _bp('bpSummary').style.display = 'none';
+}
+
+function _bpAppend(role, text) {
+  const box = _bp('bpMsgs');
+  if (!box) return;
+  const isUser = role === 'user';
+  const isThinking = role.includes('thinking');
+  const row = document.createElement('div');
+  row.className = `bm-row${isUser ? ' bm-user' : ''}`;
+  const av = document.createElement('div');
+  av.className = `bm-av ${isUser ? 'bm-av-user' : isThinking ? 'bm-av-think' : 'bm-av-ai'}`;
+  av.textContent = isUser ? '我' : '🦕';
+  const bubble = document.createElement('div');
+  bubble.className = `bm-bubble ${isUser ? 'bm-bubble-user' : isThinking ? 'bm-bubble-think think-dots' : 'bm-bubble-ai'}`;
+  bubble.textContent = text || '';
+  row.appendChild(av);
+  row.appendChild(bubble);
+  box.appendChild(row);
+  box.scrollTop = box.scrollHeight;
+  return row;
+}
+
+async function battleStart() {
+  if (!_bpContext) { toast(ui().know.startFirst); return; }
+  const s = loadSettings();
+  if (!s.apiKey) { toast(t('toast_need_api_key')); return; }
+  const btn = _bp('bpStartBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch('/battle/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic: _bpContext.title || currentFilename || ui().misc.unknownPaper,
+        provider: s.provider || 'claude',
+        api_key: s.apiKey,
+        model: s.model || '',
+        mode: _bpMode,
+        lang: _bpDialogLanguage(),
+        paper_context: _bpPaperContext(_bpContext),
+      }),
+    });
+    if (!r.ok) throw new Error((await r.json()).detail || ui().know.startingErr);
+    const data = await r.json();
+    _bpSessionId = data.session_id;
+    _bp('bpMsgs').innerHTML = '';
+    _bpShowChat();
+    _bpAppend('assistant', data.question);
+  } catch (e) {
+    toast(ui().know.startingErr + e.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function battleSend() {
+  const input = _bp('bpInput');
+  const msg = (input?.value || '').trim();
+  if (!msg) return;
+  if (!_bpSessionId) { await battleStart(); if (!_bpSessionId) return; }
+  input.value = '';
+  _bpUpdateChars();
+  _bpAppend('user', msg);
+  const thinking = _bpAppend('assistant thinking', ui().know.thinking);
+  try {
+    const r = await fetch('/battle/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: _bpSessionId, message: msg }),
+    });
+    if (!r.ok) throw new Error((await r.json()).detail || ui().know.replyErr);
+    const data = await r.json();
+    thinking.remove();
+    _bpAppend('assistant', data.reply);
+  } catch (e) {
+    thinking.remove();
+    toast(ui().know.replyErr + e.message);
+  }
+}
+
+async function battleAskHelp() {
+  const dino = _bp('bpDino');
+  const dinoText = _bp('bpDinoText');
+  if (!_bpSessionId) {
+    if (dino && dinoText) {
+      dino.style.display = '';
+      dinoText.textContent = ui().know.startHelp;
+    }
+    return;
+  }
+  const stuck = (_bp('bpInput')?.value || '').trim() || ui().know.stuckDefault;
+  if (dino && dinoText) {
+    dino.style.display = '';
+    dinoText.textContent = ui().know.helpThinking;
+  }
+  try {
+    const r = await fetch('/battle/help', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: _bpSessionId, stuck_on: stuck }),
+    });
+    if (!r.ok) throw new Error((await r.json()).detail || ui().know.helpFail);
+    const data = await r.json();
+    if (dinoText) dinoText.textContent = data.scaffold;
+  } catch (e) {
+    if (dinoText) dinoText.textContent = ui().know.helpErr + e.message;
+  }
+}
+
+async function battleEnd() {
+  if (!_bpSessionId) { _bpShowIdle(); return; }
+  try {
+    const r = await fetch('/battle/end', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: _bpSessionId }),
+    });
+    if (!r.ok) throw new Error((await r.json()).detail || ui().know.summaryFail);
+    const data = await r.json();
+    _bpSessionId = '';
+    _bp('bpIdle').style.display = 'none';
+    _bp('bpChat').style.display = 'none';
+    _bp('bpSummary').style.display = '';
+    _bp('bpSumSticking').textContent = data.sticking_point || ui().know.summaryDefault;
+    _bp('bpSumBefore').textContent = data.card_before || '';
+    _bp('bpSumAfter').textContent = data.card_after || '';
+    _bp('bpSumTherefore').textContent = data.card_therefore || '';
+    _bp('bpSumNext').textContent = data.next_attack ? `${ui().know.next}${data.next_attack}` : '';
+  } catch (e) {
+    toast(ui().know.summaryFail + '：' + e.message);
+  }
+}
+
+function battleReset() {
+  _bpSessionId = '';
+  _bpShowIdle();
+}
+
+function _bpUpdateChars() {
+  const input = _bp('bpInput');
+  const chars = _bp('bpChars');
+  if (input && chars) chars.textContent = `${input.value.length} / ${input.maxLength || 500}`;
+}
+
+_bp('bpInput')?.addEventListener('input', _bpUpdateChars);
+
 // Expose onclick handlers to global scope
 window.selectSection     = selectSection;
 window.toggleChildren    = toggleChildren;
@@ -2291,5 +3090,12 @@ window.loadFromLibrary   = loadFromLibrary;
 window.deleteLibraryItem = deleteLibraryItem;
 window.showTagInput      = showTagInput;
 window.deleteAnnotation  = deleteAnnotation;
+window.toggleBattlePanel = toggleBattlePanel;
+window.selectBattleMode  = selectBattleMode;
+window.battleStart       = battleStart;
+window.battleSend        = battleSend;
+window.battleAskHelp     = battleAskHelp;
+window.battleEnd         = battleEnd;
+window.battleReset       = battleReset;
 
 init();

@@ -1,4 +1,4 @@
-# Paper Reader — User Guide
+# PaperKnowKnow — User Guide
 
 **AI-Powered PDF Paper Reading & Analysis Tool**
 
@@ -18,7 +18,7 @@
 
 ## 1. Introduction
 
-**Paper Reader** is a locally-run AI tool for reading and analyzing academic papers.
+**PaperKnowKnow** is a locally-run AI tool for reading and analyzing academic papers.
 
 - Upload a PDF and let AI generate a reading guide, structured notes, or critical analysis
 - Supports Claude · OpenAI · Gemini — three major AI providers
@@ -122,8 +122,8 @@ A terminal window will open and install all dependencies (about **2–5 minutes*
 **Double-click** `mac/build.sh` (handle any security block the same way: right-click → Open)
 
 When done, the `dist/` folder will contain:
-- `论文阅读助手.app` — the application
-- `论文阅读助手-Mac.dmg` — a distributable disk image
+- `PaperKnowKnow.app` — the application
+- `PaperKnowKnow-Mac.dmg` — a distributable disk image
 
 Drag the `.app` into your **Applications** folder to complete installation.
 
@@ -161,10 +161,10 @@ A Command Prompt window will open and install all dependencies (about **2–5 mi
 **Double-click** `windows\build.bat`
 
 When done, the `dist\` folder will contain:
-- `PaperReader\PaperReader.exe` — the application
-- `PaperReader-Windows.zip` — a distributable zip archive
+- `PaperKnowKnow\PaperKnowKnow.exe` — the application
+- `PaperKnowKnow-Windows.zip` — a distributable zip archive
 
-Unzip the archive and double-click `PaperReader.exe` to run.
+Unzip the archive and double-click `PaperKnowKnow.exe` to run.
 
 ---
 
@@ -172,8 +172,8 @@ Unzip the archive and double-click `PaperReader.exe` to run.
 
 | Platform | How to launch |
 |----------|--------------|
-| Mac | Double-click「论文阅读助手.app」|
-| Windows | Double-click「PaperReader.exe」|
+| Mac | Double-click「PaperKnowKnow.app」|
+| Windows | Double-click「PaperKnowKnow.exe」|
 
 A small status window will appear showing「✓ Service is running」and your browser will **open automatically**.
 
@@ -281,7 +281,7 @@ A: Settings → 「Output Language」→ select your language → Save → re-ru
 
 **Q: How do I uninstall?**
 
-A: Simply delete the `paper-reader` folder (or the `.app` file on Mac). No system-level changes are made.
+A: Simply delete the `PaperKnowKnow` folder (or the `.app` file on Mac). No system-level changes are made.
 
 ---
 

@@ -50,7 +50,7 @@ info "Building .app with PyInstaller..."
 $PY -m PyInstaller paper_reader.spec
 
 # ── 验证输出 ──────────────────────────────────────────────────────────────
-APP_PATH="dist/论文阅读助手.app"
+APP_PATH="dist/PaperKnowKnow.app"
 if [ ! -d "$APP_PATH" ]; then
     error "Build failed — $APP_PATH not found."
 fi
@@ -59,7 +59,7 @@ APP_SIZE=$(du -sh "$APP_PATH" | cut -f1)
 info "Build complete!"
 echo ""
 echo "  App:   $(pwd)/$APP_PATH  ($APP_SIZE)"
-echo "  Data:  ~/Library/Application Support/PaperReader/"
+echo "  Data:  ~/Library/Application Support/PaperKnowKnow/"
 echo ""
 
 # ── Gatekeeper 提示 ───────────────────────────────────────────────────────

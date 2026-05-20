@@ -1,7 +1,7 @@
 @echo off
-title Paper Reader
+title PaperKnowKnow
 echo ============================
-echo   Paper Reader - Starting
+echo   PaperKnowKnow - Starting
 echo ============================
 echo.
 echo Browser will open automatically.

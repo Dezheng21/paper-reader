@@ -1,5 +1,5 @@
 @echo off
-title Paper Reader - Setup
+title PaperKnowKnow - Setup
 echo Installing dependencies...
 cd /d "%~dp0"
 pip install -r requirements.txt

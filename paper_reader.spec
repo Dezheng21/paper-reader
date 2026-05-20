@@ -58,7 +58,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='PaperReader',
+    name='PaperKnowKnow',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -74,21 +74,21 @@ coll = COLLECT(
     strip=False,
     upx=False,              # keep all DLLs/PYDs uncompressed for faster cold start
     upx_exclude=[],
-    name='PaperReader',
+    name='PaperKnowKnow',
 )
 
 if _is_mac:
     app = BUNDLE(
         coll,
-        name='论文阅读助手.app',
+        name='PaperKnowKnow.app',
         icon=_icon_icns,
-        bundle_identifier='com.paperreader.app',
+        bundle_identifier='com.paperknowknow.app',
         info_plist={
             'NSHighResolutionCapable': True,
             'LSUIElement': False,
             'CFBundleShortVersionString': '1.0.0',
             'NSRequiresAquaSystemAppearance': False,
-            'CFBundleDisplayName': '论文阅读助手',
-            'CFBundleName': '论文阅读助手',
+            'CFBundleDisplayName': 'PaperKnowKnow',
+            'CFBundleName': 'PaperKnowKnow',
         },
     )

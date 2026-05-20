@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>论文阅读助手</title>
+<title>PaperKnowKnow</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 <style>
 /* ── Design tokens (Notion × Typora) ────────────────────── */
 :root {
@@ -141,6 +142,23 @@ body { display: flex; flex-direction: column; background: var(--bg); }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 260px; padding: 40px 20px; text-align: center; color: var(--t3); }
 .ei { font-size: 52px; margin-bottom: 16px; }
 .empty-state p { font-size: 14px; line-height: 1.7; color: var(--t2); }
+.doc-health {
+  margin: 12px 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-white);
+}
+.doc-health-title { font-size: 13px; font-weight: 700; color: var(--t1); margin-bottom: 8px; }
+.doc-health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.doc-health-stat { background: var(--bg-hover); border-radius: 8px; padding: 8px; }
+.doc-health-stat b { display: block; font-size: 15px; color: var(--t1); }
+.doc-health-stat span { font-size: 11px; color: var(--t3); }
+.doc-health-note { font-size: 12px; line-height: 1.65; color: var(--t2); }
+.doc-health-badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.doc-health-badge.high { color: var(--green); background: var(--green-s); }
+.doc-health-badge.medium { color: var(--amber); background: var(--amber-s); }
+.doc-health-badge.low { color: var(--red); background: var(--red-s); }
 
 /* paper info */
 .paper-info { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
@@ -180,6 +198,26 @@ body { display: flex; flex-direction: column; background: var(--bg); }
 .guide-paper-info { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
 .guide-paper-title { font-size: 14px; font-weight: 600; line-height: 1.5; color: var(--t1); margin-bottom: 4px; }
 .guide-paper-meta  { font-size: 12px; color: var(--t2); }
+.overview-dashboard { padding: 12px 14px 4px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(35,131,226,.045), transparent); }
+.ov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.ov-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 11px; }
+.ov-card-wide { grid-column: 1 / -1; }
+.ov-label { font-size: 10px; letter-spacing: .7px; text-transform: uppercase; color: var(--t3); font-weight: 700; margin-bottom: 5px; }
+.ov-text { font-size: 12.5px; line-height: 1.65; color: var(--t1); }
+.logic-flow { display: flex; flex-direction: column; gap: 7px; }
+.logic-step { display: grid; grid-template-columns: 58px 1fr; gap: 8px; align-items: start; position: relative; }
+.logic-step:not(:last-child)::after { content: ""; position: absolute; left: 28px; top: 24px; bottom: -7px; width: 1px; background: var(--border-m); }
+.logic-step-label { position: relative; z-index: 1; background: var(--accent-s); color: var(--accent); border-radius: 999px; padding: 3px 8px; font-size: 11px; font-weight: 700; text-align: center; }
+.logic-step-text { font-size: 12px; line-height: 1.6; color: var(--t2); }
+.evidence-chain { display: flex; flex-direction: column; gap: 7px; }
+.evidence-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; padding: 7px 0; border-bottom: 1px dashed var(--border); }
+.evidence-row:last-child { border-bottom: 0; }
+.evidence-claim { font-size: 12px; line-height: 1.55; color: var(--t1); }
+.concept-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.concept-chip { font-size: 11.5px; color: var(--green); background: var(--green-s); border: 1px solid rgba(15,123,108,.16); border-radius: 999px; padding: 3px 8px; }
+.read-map-mini { display: flex; flex-direction: column; gap: 5px; }
+.read-map-item { display: flex; gap: 8px; align-items: baseline; font-size: 12px; color: var(--t2); }
+.read-map-goal { color: var(--t1); font-weight: 600; min-width: 76px; }
 
 /* Core blocks — using Notion-style colored callouts */
 .core-question {
@@ -384,10 +422,10 @@ body { display: flex; flex-direction: column; background: var(--bg); }
 /* ── PDF Text layer ──────────────────────────────────────── */
 .textLayer { position: absolute; left: 0; top: 0; overflow: hidden; line-height: 1; }
 .textLayer span { position: absolute; white-space: pre; transform-origin: 0% 0%; color: transparent; cursor: text; pointer-events: auto; user-select: text; }
-.textLayer span.hl { background: rgba(253,224,71,.55); border-radius: 2px; transition: background .4s; }
+.textLayer span.hl { background: rgba(250,204,21,.72); border-radius: 3px; box-shadow: 0 0 0 2px rgba(250,204,21,.32); transition: background .4s; }
 .textLayer span.annotated { background: rgba(35,131,226,.28); border-radius: 2px; }
-.textLayer span.hl-search { background: rgba(245,158,11,.55); border-radius: 2px; }
-.textLayer span.hl-search.current { background: rgba(239,68,68,.65); }
+.textLayer span.hl-search { background: rgba(245,158,11,.62); border-radius: 3px; box-shadow: 0 0 0 1px rgba(245,158,11,.24); }
+.textLayer span.hl-search.current { background: rgba(239,68,68,.76); box-shadow: 0 0 0 2px rgba(239,68,68,.32); }
 
 /* ── Selection toolbar ───────────────────────────────────── */
 .sel-bar { position: fixed; display: none; background: var(--bg-white); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(55,53,47,.16); padding: 4px 6px; gap: 4px; flex-direction: row; align-items: center; z-index: 300; }
@@ -398,15 +436,15 @@ body { display: flex; flex-direction: column; background: var(--bg); }
 .sel-btn:hover { filter: brightness(1.1); }
 
 /* ── PDF search bar ──────────────────────────────────────── */
-.pdf-search-bar { position: absolute; top: 8px; right: 16px; display: none; align-items: center; gap: 6px; background: var(--bg-white); border: 1px solid var(--border); border-radius: 9px; box-shadow: 0 4px 16px rgba(55,53,47,.15); padding: 7px 10px; z-index: 50; }
+.pdf-search-bar { position: absolute; top: 8px; right: 16px; display: none; align-items: center; gap: 8px; background: rgba(255,255,255,.96); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 8px 28px rgba(55,53,47,.16); padding: 10px 12px; z-index: 50; backdrop-filter: blur(10px); }
 .pdf-search-bar.show { display: flex; }
-.pdf-search-input { border: 1px solid var(--border-m); border-radius: 6px; padding: 5px 10px; font-size: 13px; outline: none; width: 200px; background: var(--bg-white); color: var(--t1); }
+.pdf-search-input { border: 1px solid var(--border-m); border-radius: 10px; padding: 7px 12px; font-size: 14px; outline: none; width: min(360px, 40vw); background: var(--bg-white); color: var(--t1); }
 .pdf-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-s); }
-.pdf-search-count { font-size: 12px; color: var(--t3); white-space: nowrap; min-width: 54px; text-align: center; }
-.pdf-search-nav { background: var(--accent-s); color: var(--accent); border: 1px solid rgba(35,131,226,.2); border-radius: 5px; padding: 3px 8px; cursor: pointer; font-size: 13px; font-weight: 600; line-height: 1; }
+.pdf-search-count { font-size: 13px; color: var(--t3); white-space: nowrap; min-width: 54px; text-align: center; }
+.pdf-search-nav { background: var(--accent-s); color: var(--accent); border: 1px solid rgba(35,131,226,.2); border-radius: 9px; padding: 7px 10px; cursor: pointer; font-size: 14px; font-weight: 700; line-height: 1; }
 .pdf-search-nav:hover { background: rgba(35,131,226,.2); }
 .pdf-search-nav:disabled { opacity: .35; cursor: not-allowed; }
-.pdf-search-close { background: none; border: none; color: var(--t3); cursor: pointer; font-size: 15px; padding: 0 3px; border-radius: 4px; }
+.pdf-search-close { background: none; border: none; color: var(--t3); cursor: pointer; font-size: 22px; padding: 0 3px; border-radius: 7px; }
 .pdf-search-close:hover { background: var(--red-s); color: var(--red); }
 
 /* ── Annotation popup ────────────────────────────────────── */
@@ -518,6 +556,33 @@ body { display: flex; flex-direction: column; background: var(--bg); }
 .cite-copy:hover { background: rgba(35,131,226,.2); }
 .cite-find { background: var(--green-s); color: var(--green); border: 1px solid rgba(15,123,108,.2); }
 .cite-find:hover { background: rgba(15,123,108,.18); }
+.evidence-summary {
+  margin: 8px 14px 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(15,123,108,.045);
+  font-size: 11.5px;
+  color: var(--t2);
+  line-height: 1.55;
+}
+.evidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.evidence-badge.verified { color: var(--green); background: var(--green-s); border-color: rgba(15,123,108,.18); }
+.evidence-badge.unverified { color: var(--red); background: var(--red-s); border-color: rgba(203,61,61,.18); }
+.evidence-badge.not_checked { color: var(--t2); background: rgba(55,53,47,.06); border-color: var(--border); }
+.page-ref-btn.verified { border-color: rgba(15,123,108,.32); background: var(--green-s); }
+.page-ref-btn.unverified { border-color: rgba(203,61,61,.28); background: var(--red-s); color: var(--red); }
 
 /* research */
 .gap-item { padding: 5px 8px 5px 22px; position: relative; font-size: 12.5px; line-height: 1.6; color: var(--t2); margin-bottom: 4px; }
@@ -534,7 +599,7 @@ body { display: flex; flex-direction: column; background: var(--bg); }
 
 <!-- Topbar -->
 <header class="topbar">
-  <span class="app-title" id="appTitle">论文阅读助手</span>
+  <span class="app-title" id="appTitle">PaperKnowKnow</span>
   <div class="topbar-center">
     <label class="btn btn-open" id="openPaperLabel">
       <input type="file" id="fileInput" accept=".pdf" style="display:none">
@@ -543,8 +608,8 @@ body { display: flex; flex-direction: column; background: var(--bg); }
     <span class="filename" id="filenameDisplay">未打开文件</span>
   </div>
   <div class="topbar-right">
-    <button class="btn btn-analyze" id="analyzeBtn" disabled>分析结构</button>
-    <button class="btn btn-settings" id="pdfToMdBtn" disabled title="PDF → MD">PDF → MD</button>
+    <button class="btn btn-analyze" id="analyzeBtn" disabled>论文分析</button>
+    <button class="btn btn-settings" id="pdfToMdBtn" disabled title="导出为 Markdown">导出</button>
     <select id="topbarLangSel" class="topbar-lang" title="界面语言 / UI Language">
       <option value="Chinese">中文简体</option>
       <option value="English">English</option>
@@ -558,9 +623,10 @@ body { display: flex; flex-direction: column; background: var(--bg); }
     </select>
     <button class="btn btn-learn" id="learnLangBtn">
       <span id="learnLangText">语言学习</span>
-      <span class="tooltip" id="learnLangTooltip">开启后，AI 会在导读中额外提取 5-8 个核心术语，附上原文词汇、译文和释义。适合在阅读外文文献时同步学习专业词汇。会额外消耗少量 token。</span>
+      <span class="tooltip" id="learnLangTooltip">开启后，AI 会在分析结果中额外提取 5-8 个核心术语，附上原文词汇、译文和释义。适合在阅读外文文献时同步学习专业词汇。会额外消耗少量 token。</span>
     </button>
     <button class="btn btn-settings" id="libraryBtn"><span id="libraryText">📚 书架</span></button>
+    <button class="btn btn-battle-open" id="battleOpenBtn" style="display:none" onclick="toggleBattlePanel()">🦕 KnowKnow</button>
     <button class="btn btn-settings" id="settingsBtn"><span id="settingsText">⚙ 设置</span></button>
   </div>
 </header>
@@ -575,7 +641,7 @@ body { display: flex; flex-direction: column; background: var(--bg); }
 <div class="layout">
   <div class="sidebar" id="sidebar">
     <div class="sidebar-controls">
-      <span class="sidebar-controls-label">导读</span>
+      <span class="sidebar-controls-label">分析结果</span>
       <div class="font-btns">
         <button class="font-btn" id="fontDecBtn" title="缩小字体">A−</button>
         <button class="font-btn" id="fontIncBtn" title="放大字体">A+</button>
@@ -589,7 +655,7 @@ body { display: flex; flex-direction: column; background: var(--bg); }
     <div class="sidebar-body" id="sidebarBody">
       <div class="empty-state">
         <div class="ei">📋</div>
-        <p>打开论文后点击<br>「分析结构」查看大纲</p>
+        <p>打开论文后点击<br>「论文分析」查看解读</p>
       </div>
     </div>
   </div>
@@ -638,7 +704,7 @@ body { display: flex; flex-direction: column; background: var(--bg); }
 <div class="overlay" id="intentOverlay" style="display:none">
   <div class="modal" style="width:700px">
     <div class="modal-head">
-      <span>开始分析</span>
+      <span>选择分析方式</span>
       <button class="modal-x" id="intentClose">✕</button>
     </div>
     <div class="modal-body">
@@ -647,28 +713,28 @@ body { display: flex; flex-direction: column; background: var(--bg); }
         <div class="intent-layout">
           <div class="intent-opts" id="intentOpts">
             <div class="intent-opt selected" data-intent="quick">
-              <span class="intent-opt-title">快速了解核心观点 <span class="intent-opt-badge">导读</span></span>
-              <span class="intent-opt-desc">不打算读原文，只需掌握精华</span>
+              <span class="intent-opt-title">快速看懂 <span class="intent-opt-badge">速读</span></span>
+              <span class="intent-opt-desc">不一定读原文，先抓住问题、结论和意义</span>
             </div>
             <div class="intent-opt" data-intent="deep">
-              <span class="intent-opt-title">精读前的预热导航 <span class="intent-opt-badge">导读</span></span>
-              <span class="intent-opt-desc">导读作为精读前的预热和导航</span>
+              <span class="intent-opt-title">精读导读 <span class="intent-opt-badge">导读</span></span>
+              <span class="intent-opt-desc">准备读原文，先看清论证路线和重点页码</span>
             </div>
             <div class="intent-opt" data-intent="question">
-              <span class="intent-opt-title">我有一个具体问题 <span class="intent-opt-badge">导读</span></span>
-              <span class="intent-opt-desc">导读围绕我的问题重点展开</span>
+              <span class="intent-opt-title">带问题读 <span class="intent-opt-badge">问答</span></span>
+              <span class="intent-opt-desc">围绕你的问题，直接找答案、证据和边界</span>
             </div>
             <div class="intent-opt" data-intent="deep_notes">
-              <span class="intent-opt-title">结构化精读笔记 <span class="intent-opt-badge">深度</span></span>
-              <span class="intent-opt-desc">完整提取论文逻辑骨架与实验数据</span>
+              <span class="intent-opt-title">文献笔记 <span class="intent-opt-badge">深度</span></span>
+              <span class="intent-opt-desc">完整提取论文逻辑骨架、方法与结果</span>
             </div>
             <div class="intent-opt" data-intent="critical">
-              <span class="intent-opt-title">批判性分析 <span class="intent-opt-badge">审稿</span></span>
-              <span class="intent-opt-desc">模拟审稿人视角，专门找硬伤</span>
+              <span class="intent-opt-title">审稿视角 <span class="intent-opt-badge">审稿</span></span>
+              <span class="intent-opt-desc">公平评估贡献、证据链、方法限制和硬伤</span>
             </div>
             <div class="intent-opt" data-intent="research">
-              <span class="intent-opt-title">延伸研究与选题 <span class="intent-opt-badge">科研</span></span>
-              <span class="intent-opt-desc">为你的研究课题挖掘切入点</span>
+              <span class="intent-opt-title">选题推进 <span class="intent-opt-badge">科研</span></span>
+              <span class="intent-opt-desc">结合你的课题，挖掘空白、迁移方法和选题</span>
             </div>
           </div>
           <div class="intent-desc-panel" id="intentDesc">
@@ -679,7 +745,7 @@ body { display: flex; flex-direction: column; background: var(--bg); }
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-analyze" id="intentConfirm">开始分析</button>
+      <button class="btn btn-analyze" id="intentConfirm">开始论文分析</button>
     </div>
   </div>
 </div>
@@ -690,6 +756,8 @@ body { display: flex; flex-direction: column; background: var(--bg); }
     <div class="lib-head">
       <h2>📚 书架</h2>
       <input class="lib-search" id="libSearch" placeholder="搜索标题…">
+      <button class="lib-btn lib-btn-load" id="libOrganizeBtn" title="整理旧记录标签">整理</button>
+      <button class="lib-btn lib-btn-load" id="libExportBtn" title="导出整个书架">导出</button>
       <button class="modal-x" id="libraryClose">✕</button>
     </div>
     <div class="lib-body" id="libBody">
@@ -712,6 +780,9 @@ body { display: flex; flex-direction: column; background: var(--bg); }
           <option value="claude">Claude (Anthropic)</option>
           <option value="openai">OpenAI (GPT)</option>
           <option value="gemini">Gemini (Google)</option>
+          <option value="deepseek">DeepSeek</option>
+          <option value="groq">Groq (免费额度)</option>
+          <option value="mistral">Mistral AI</option>
         </select>
       </div>
       <div class="field">
@@ -765,6 +836,241 @@ body { display: flex; flex-direction: column; background: var(--bg); }
     <p id="loadingMsg">处理中…</p>
   </div>
 </div>
+
+<!-- ── KnowKnow 面板 ─────────────────────────────────────────────────────── -->
+<div id="battlePanel" class="battle-panel">
+  <div class="bp-head">
+    <div class="bp-title" style="display:flex;align-items:center;gap:8px;">
+      🦕 <span id="bpTopicName">论文对话</span>
+      <span id="bpModeTag" style="font-size:11px;padding:2px 7px;border-radius:10px;background:#EFF6FF;color:#1D4ED8;font-weight:600;">问答</span>
+    </div>
+    <div class="bp-actions">
+      <button class="bp-icon-btn" id="bpHelpBtn" onclick="battleAskHelp()" title="KnowKnow!!!">🛡</button>
+      <button class="bp-icon-btn" id="bpEndBtn"  onclick="battleEnd()"     title="完成">✓</button>
+      <button class="bp-icon-btn"                onclick="toggleBattlePanel()"               title="关闭">✕</button>
+    </div>
+  </div>
+
+  <!-- 未开始状态 -->
+  <div id="bpIdle" class="bp-idle">
+    <div class="bp-idle-icon">🦕</div>
+    <p class="bp-idle-text">选择对话模式</p>
+    <div class="bp-mode-selector">
+      <div class="bp-mode-card active" id="bpModeChat" onclick="selectBattleMode('chat')">
+        <div class="bp-mode-icon">💬</div>
+        <div class="bp-mode-name">问答</div>
+        <div class="bp-mode-desc">解释论文内容，澄清不懂的地方</div>
+      </div>
+      <div class="bp-mode-card" id="bpModeBattle" onclick="selectBattleMode('battle')">
+        <div class="bp-mode-icon">⚔️</div>
+        <div class="bp-mode-name">检查理解</div>
+        <div class="bp-mode-desc">用几个问题确认你是否掌握核心论证</div>
+      </div>
+    </div>
+    <button class="bp-start-btn" id="bpStartBtn" onclick="battleStart()">开始</button>
+  </div>
+
+  <!-- 对话区 -->
+  <div id="bpChat" class="bp-chat" style="display:none">
+    <div class="bp-msgs" id="bpMsgs"></div>
+    <div class="bp-footer">
+      <div class="bp-dino" id="bpDino" style="display:none">
+        <span class="bp-dino-icon">🦕</span>
+        <span class="bp-dino-text" id="bpDinoText"></span>
+      </div>
+      <textarea id="bpInput" class="bp-input"
+        placeholder="输入你的回答…" maxlength="500"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();battleSend()}"></textarea>
+      <div class="bp-bar">
+        <span class="bp-chars" id="bpChars">0 / 500</span>
+        <button class="bp-send" id="bpSend" onclick="battleSend()">发送 ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结束总结 -->
+  <div id="bpSummary" class="bp-summary" style="display:none">
+    <div class="bp-sum-title">小结</div>
+    <div class="bp-sum-field">
+      <label>需要澄清的地方</label>
+      <div id="bpSumSticking" class="bp-sum-val"></div>
+    </div>
+    <div class="bp-sum-card">
+      <div id="bpSumBefore"    class="bp-sum-before"></div>
+      <div id="bpSumAfter"     class="bp-sum-after"></div>
+      <div id="bpSumTherefore" class="bp-sum-there"></div>
+    </div>
+    <div class="bp-sum-next" id="bpSumNext"></div>
+    <button class="bp-start-btn" onclick="battleReset()">继续</button>
+  </div>
+</div>
+
+<style>
+/* ── KnowKnow 面板 ── */
+.battle-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 360px;
+  height: 100vh;
+  background: #fff;
+  border-left: 1px solid rgba(55,53,47,.12);
+  box-shadow: -4px 0 24px rgba(0,0,0,.08);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+}
+.battle-panel.open { transform: translateX(0); }
+
+.bp-head {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(55,53,47,.08);
+  flex-shrink: 0;
+}
+.bp-title { font-size: 14px; font-weight: 700; color: #0D5C3A; }
+.bp-actions { display: flex; gap: 4px; }
+.bp-icon-btn {
+  width: 30px; height: 30px;
+  border: none; background: transparent;
+  border-radius: 6px; cursor: pointer;
+  font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  color: #6B7280; transition: background .15s;
+}
+.bp-icon-btn:hover { background: #F3F4F6; }
+
+/* 未开始 */
+.bp-idle {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; padding: 32px 24px;
+  text-align: center;
+}
+.bp-idle-icon { font-size: 40px; }
+.bp-idle-text { font-size: 13px; color: #6B7280; line-height: 1.7; margin-bottom: 4px; }
+
+.bp-mode-selector {
+  display: flex; gap: 10px; width: 100%;
+}
+.bp-mode-card {
+  flex: 1; padding: 14px 10px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+  background: white;
+}
+.bp-mode-card:hover { border-color: #BBF7D0; }
+.bp-mode-card.active {
+  border-color: #16B48A;
+  box-shadow: 0 0 0 3px rgba(22,180,138,.1);
+  background: #F0FDF4;
+}
+.bp-mode-icon { font-size: 22px; margin-bottom: 4px; }
+.bp-mode-name { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 3px; }
+.bp-mode-desc { font-size: 11px; color: #9CA3AF; line-height: 1.4; }
+
+/* 对话 */
+.bp-chat { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.bp-msgs {
+  flex: 1; overflow-y: auto;
+  padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.bm-row { display: flex; gap: 8px; align-items: flex-start; }
+.bm-row.bm-user { flex-direction: row-reverse; }
+.bm-av {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.bm-av-ai   { background: #FFF0F3; }
+.bm-av-user { background: #0D5C3A; color: #fff; font-weight: 700; }
+.bm-av-think{ background: #F3F7F5; color: #9CA3AF; }
+.bm-bubble {
+  max-width: 78%; padding: 9px 12px;
+  font-size: 13px; line-height: 1.7; border-radius: 10px;
+  word-break: break-word;
+}
+.bm-bubble-ai   { background: #FFF5F5; border-radius: 3px 10px 10px 10px; color: #1C1917; }
+.bm-bubble-user { background: #0D5C3A; color: #fff; border-radius: 10px 3px 10px 10px; }
+.bm-bubble-think{ background: #F9FAFB; color: #9CA3AF; font-style: italic; }
+.think-dots::after { content:'…'; animation: blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:.3} 50%{opacity:1} }
+
+.bp-footer { border-top: 1px solid rgba(55,53,47,.07); flex-shrink: 0; }
+.bp-dino {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 12px;
+  background: #F0FDF4;
+  border-bottom: 1px solid #BBF7D0;
+}
+.bp-dino-icon { font-size: 18px; flex-shrink: 0; }
+.bp-dino-text { font-size: 12px; color: #166534; line-height: 1.6; }
+.bp-input {
+  width: 100%; padding: 10px 12px;
+  font-size: 13px; font-family: inherit;
+  border: none; border-top: 1px solid rgba(55,53,47,.07);
+  outline: none; resize: none; height: 72px;
+  line-height: 1.5; color: #37352F;
+  background: #fff;
+}
+.bp-input:focus { border-top-color: #16B48A; }
+.bp-bar {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px 8px;
+}
+.bp-chars { font-size: 11px; color: #CBD5E1; }
+.bp-send {
+  padding: 6px 16px;
+  background: #16B48A; color: #fff;
+  border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer;
+  transition: background .15s;
+}
+.bp-send:hover:not(:disabled) { background: #13A07C; }
+.bp-send:disabled { background: #9CA3AF; cursor: not-allowed; }
+
+/* 总结 */
+.bp-summary { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.bp-sum-title { font-size: 15px; font-weight: 800; color: #0D5C3A; }
+.bp-sum-field label { font-size: 11px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: .5px; display: block; margin-bottom: 4px; }
+.bp-sum-val { font-size: 13px; color: #374151; background: #FFF8F0; border-radius: 8px; padding: 8px 10px; line-height: 1.6; }
+.bp-sum-card { background: white; border: 1.5px solid #D1FAE5; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.bp-sum-before    { font-size: 12px; color: #9CA3AF; }
+.bp-sum-after     { font-size: 13px; color: #166534; font-weight: 600; }
+.bp-sum-there     { font-size: 12px; color: #374151; }
+.bp-sum-next { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #1E40AF; line-height: 1.6; }
+
+/* 开战/再战按钮 */
+.bp-start-btn {
+  padding: 11px; background: #16B48A; color: #fff;
+  border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: background .15s;
+}
+.bp-start-btn:hover { background: #13A07C; }
+
+/* 顶栏 KnowKnow 按钮 */
+.btn-battle-open {
+  padding: 0 14px; height: 32px;
+  background: #16B48A; color: #fff;
+  border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: background .15s;
+  margin-right: 6px;
+}
+.btn-battle-open:hover { background: #13A07C; }
+</style>
 
 <script src="/static/app.js"></script>
 </body>

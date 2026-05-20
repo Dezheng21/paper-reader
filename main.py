@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import sys
 import threading
 import time
@@ -8,20 +9,28 @@ import traceback
 import uuid
 import shutil
 import webbrowser
+import zipfile
+from collections import OrderedDict
+from functools import lru_cache
 from pathlib import Path
 
+import fitz
 import uvicorn
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from ai_analyzer import analyze_paper, validate_key
-from pdf_parser import extract_pdf_text
+from pdf_parser import document_profile, extract_pdf_text, local_ocr_status
+import battle as bt
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 
 # ── Path resolution: works in dev AND when packaged with PyInstaller ──────────
 
@@ -33,11 +42,11 @@ def _static_dir() -> Path:
 def _data_dir() -> Path:
     if getattr(sys, 'frozen', False):
         if sys.platform == 'darwin':
-            base = Path.home() / 'Library' / 'Application Support' / 'PaperReader'
+            base = Path.home() / 'Library' / 'Application Support' / 'PaperKnowKnow'
         elif sys.platform == 'win32':
-            base = Path(os.environ.get('APPDATA', Path.home())) / 'PaperReader'
+            base = Path(os.environ.get('APPDATA', Path.home())) / 'PaperKnowKnow'
         else:
-            base = Path.home() / '.paper-reader'
+            base = Path.home() / '.paperknowknow'
         base.mkdir(parents=True, exist_ok=True)
         return base
     return Path(__file__).parent
@@ -51,8 +60,88 @@ LIBRARY_DIR.mkdir(exist_ok=True)
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
-app = FastAPI(title="Paper Reader")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app = FastAPI(title="PaperKnowKnow")
+
+
+# ── Security middleware ──────────────────────────────────────────────────────
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: blob:; "
+            "connect-src 'self'; "
+            "font-src 'self' data:; "
+            "worker-src 'self' blob:; "
+        )
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:8000", "http://localhost:8000"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+
+# ── Simple rate limiter (in-memory) ──────────────────────────────────────────
+
+class _RateLimiter:
+    def __init__(self, max_calls: int = 30, window: int = 60):
+        self._max = max_calls
+        self._window = window
+        self._hits: dict[str, list[float]] = {}
+        self._lock = threading.Lock()
+
+    def check(self, key: str) -> bool:
+        now = time.time()
+        with self._lock:
+            stamps = self._hits.get(key, [])
+            stamps = [t for t in stamps if now - t < self._window]
+            if len(stamps) >= self._max:
+                return False
+            stamps.append(now)
+            self._hits[key] = stamps
+            return True
+
+_rate = _RateLimiter(max_calls=30, window=60)
+
+
+# ── PDF document cache (avoids re-parsing on every request) ──────────────────
+
+class _PDFCache:
+    def __init__(self, max_size: int = 8):
+        self._cache: OrderedDict[str, fitz.Document] = OrderedDict()
+        self._max = max_size
+        self._lock = threading.Lock()
+
+    def get(self, path: str) -> fitz.Document:
+        with self._lock:
+            if path in self._cache:
+                self._cache.move_to_end(path)
+                return self._cache[path]
+            doc = fitz.open(path)
+            self._cache[path] = doc
+            if len(self._cache) > self._max:
+                _, old = self._cache.popitem(last=False)
+                old.close()
+            return doc
+
+    def evict(self, path: str):
+        with self._lock:
+            doc = self._cache.pop(path, None)
+            if doc:
+                doc.close()
+
+_pdf_cache = _PDFCache()
+
 
 NO_CACHE = {
     "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -86,8 +175,15 @@ async def upload(file: UploadFile = File(...)):
         raise HTTPException(400, "Only PDF files are supported")
     fid = str(uuid.uuid4())
     dest = UPLOAD_DIR / f"{fid}.pdf"
+    size = 0
     with open(dest, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+        while chunk := await file.read(1024 * 1024):
+            size += len(chunk)
+            if size > MAX_UPLOAD_SIZE:
+                f.close()
+                dest.unlink(missing_ok=True)
+                raise HTTPException(413, f"File too large (max {MAX_UPLOAD_SIZE // 1024 // 1024} MB)")
+            f.write(chunk)
     return {"file_id": fid, "filename": file.filename}
 
 
@@ -100,6 +196,62 @@ async def get_pdf(file_id: str):
         raise HTTPException(404, "File not found")
     return FileResponse(str(path), media_type="application/pdf",
                         headers={"Accept-Ranges": "bytes"})
+
+
+def _resolve_pdf_path(file_id: str, source: str = "upload") -> Path:
+    if not all(c.isalnum() or c == "-" for c in file_id):
+        raise HTTPException(400, "Invalid file ID")
+    path = (LIBRARY_DIR if source == "library" else UPLOAD_DIR) / f"{file_id}.pdf"
+    if not path.exists():
+        raise HTTPException(404, "File not found")
+    return path
+
+
+@app.get("/document_profile/{file_id}")
+async def get_document_profile(file_id: str, source: str = "upload"):
+    """Return local readability signals before AI analysis."""
+    path = _resolve_pdf_path(file_id, source)
+    return document_profile(str(path))
+
+
+def _normalize_search_text(text: str) -> str:
+    return re.sub(r"\s+", " ", text or "").strip().lower()
+
+
+@app.get("/search_doc/{file_id}")
+async def search_doc(file_id: str, q: str, source: str = "upload", limit: int = 80):
+    """Search the whole document text on the backend.
+
+    Frontend PDF.js search only sees rendered pages. This endpoint searches all
+    extracted page text, so Ctrl+F / citation positioning can find pages that
+    have not been rendered yet.
+    """
+    path = _resolve_pdf_path(file_id, source)
+    query = _normalize_search_text(q)
+    if len(query) < 2:
+        return {"matches": []}
+
+    pages = extract_pdf_text(str(path))
+    matches = []
+    for p in pages:
+        raw = p.get("text", "")
+        hay = _normalize_search_text(raw)
+        pos = hay.find(query)
+        if pos < 0:
+            words = [w for w in re.split(r"\W+", query) if len(w) >= 4]
+            found = [hay.find(w) for w in words if hay.find(w) >= 0]
+            pos = min(found) if found else -1
+        if pos >= 0:
+            start = max(0, pos - 70)
+            end = min(len(hay), pos + len(query) + 110)
+            matches.append({
+                "page": p["page"],
+                "snippet": hay[start:end],
+                "source": p.get("source", "text_layer"),
+            })
+            if len(matches) >= limit:
+                break
+    return {"matches": matches}
 
 # ── Validate API key ──────────────────────────────────────────────────────────
 
@@ -136,8 +288,7 @@ async def pdf_to_md(file_id: str, source: str = "upload"):
     if not path.exists():
         raise HTTPException(404, "File not found")
 
-    import fitz
-    doc = fitz.open(str(path))
+    doc = _pdf_cache.get(str(path))
     lines = []
     for i, page in enumerate(doc):
         pw, ph = page.rect.width, page.rect.height
@@ -196,31 +347,14 @@ async def pdf_to_md(file_id: str, source: str = "upload"):
 
 # ── Page text / OCR ───────────────────────────────────────────────────────────
 
-@app.get("/page_text/{file_id}/{page_num}")
-async def page_text(file_id: str, page_num: int, source: str = "upload"):
-    """Return text spans for one page (1-based).
-    Tries PyMuPDF text extraction first; if empty, returns scanned=True so the
-    caller knows it needs AI-OCR (handled by /page_ocr).
-    """
-    if not all(c.isalnum() or c == "-" for c in file_id):
-        raise HTTPException(400, "Invalid file ID")
-    if source == "library":
-        path = LIBRARY_DIR / f"{file_id}.pdf"
-    else:
-        path = UPLOAD_DIR / f"{file_id}.pdf"
-    if not path.exists():
-        raise HTTPException(404, "File not found")
-
+def _extract_page_spans(page, textpage=None) -> list:
     import fitz
-    doc = fitz.open(str(path))
-    idx = page_num - 1
-    if idx < 0 or idx >= len(doc):
-        raise HTTPException(400, "Page out of range")
-    page = doc[idx]
     pw, ph = page.rect.width, page.rect.height
-
     spans = []
-    d = page.get_text("dict", flags=fitz.TEXT_PRESERVE_WHITESPACE)
+    if textpage is None:
+        d = page.get_text("dict", flags=fitz.TEXT_PRESERVE_WHITESPACE)
+    else:
+        d = page.get_text("dict", textpage=textpage, flags=fitz.TEXT_PRESERVE_WHITESPACE)
     for block in d.get("blocks", []):
         if block.get("type") != 0:
             continue
@@ -237,8 +371,39 @@ async def page_text(file_id: str, page_num: int, source: str = "upload"):
                     "w": round((x1 - x0) / pw, 5),
                     "h": round((y1 - y0) / ph, 5),
                 })
+    return spans
+
+@app.get("/page_text/{file_id}/{page_num}")
+async def page_text(file_id: str, page_num: int, source: str = "upload"):
+    """Return text spans for one page (1-based).
+    Tries PyMuPDF text extraction first; if empty, returns scanned=True so the
+    caller knows it needs AI-OCR (handled by /page_ocr).
+    """
+    path = _resolve_pdf_path(file_id, source)
+    doc = _pdf_cache.get(str(path))
+    idx = page_num - 1
+    if idx < 0 or idx >= len(doc):
+        raise HTTPException(400, "Page out of range")
+    page = doc[idx]
+    spans = _extract_page_spans(page)
+    engine = "text_layer"
+
+    if not spans and local_ocr_status().get("available"):
+        try:
+            tp = page.get_textpage_ocr(language="eng", dpi=200, full=True)
+            ocr_spans = _extract_page_spans(page, tp)
+            if ocr_spans:
+                spans = ocr_spans
+                engine = "local_tesseract"
+        except Exception:
+            engine = "text_layer"
     doc.close()
-    return {"spans": spans, "scanned": len(spans) == 0}
+    return {
+        "spans": spans,
+        "scanned": len(spans) == 0,
+        "engine": engine,
+        "local_ocr": local_ocr_status(),
+    }
 
 
 class OcrReq(BaseModel):
@@ -252,7 +417,7 @@ async def page_ocr(file_id: str, page_num: int, req: OcrReq, source: str = "uplo
     """Render page as image and OCR it using the AI vision API."""
     if not all(c.isalnum() or c == "-" for c in file_id):
         raise HTTPException(400, "Invalid file ID")
-    if req.provider not in ("claude", "openai", "gemini"):
+    if req.provider not in ("claude", "openai", "gemini", "deepseek", "groq", "mistral"):
         raise HTTPException(400, "Invalid provider")
     if source == "library":
         path = LIBRARY_DIR / f"{file_id}.pdf"
@@ -261,8 +426,8 @@ async def page_ocr(file_id: str, page_num: int, req: OcrReq, source: str = "uplo
     if not path.exists():
         raise HTTPException(404, "File not found")
 
-    import fitz, base64, json as _json
-    doc = fitz.open(str(path))
+    import base64, json as _json
+    doc = _pdf_cache.get(str(path))
     idx = page_num - 1
     if idx < 0 or idx >= len(doc):
         raise HTTPException(400, "Page out of range")
@@ -356,10 +521,13 @@ class AnalyzeReq(BaseModel):
 
 
 @app.post("/analyze")
-async def analyze(req: AnalyzeReq):
+async def analyze(req: AnalyzeReq, request: Request):
+    client_ip = request.client.host if request.client else "unknown"
+    if not _rate.check(client_ip):
+        raise HTTPException(429, "Too many requests, please try again later")
     if not req.api_key:
         raise HTTPException(400, "API key required")
-    if req.provider not in ("claude", "openai", "gemini"):
+    if req.provider not in ("claude", "openai", "gemini", "deepseek", "groq", "mistral"):
         raise HTTPException(400, "Invalid provider")
     if req.file_id:
         if not all(c.isalnum() or c == "-" for c in req.file_id):
@@ -378,6 +546,14 @@ async def analyze(req: AnalyzeReq):
         logger.info("Extracted %d pages from PDF", len(pages))
         total_chars = sum(len(p["text"]) for p in pages)
         logger.info("Total extracted characters: %d", total_chars)
+        if total_chars < 200 and local_ocr_status().get("available"):
+            logger.info("Text too sparse (%d chars), trying local OCR first", total_chars)
+            ocr_pages = extract_pdf_text(str(path), use_local_ocr=True)
+            ocr_chars = sum(len(p["text"]) for p in ocr_pages)
+            if ocr_chars > total_chars:
+                pages = ocr_pages
+                total_chars = ocr_chars
+                logger.info("Local OCR extracted %d characters", total_chars)
         pdf_path = str(path) if total_chars < 200 else ""
         if pdf_path:
             logger.info("Text too sparse (%d chars), switching to PDF-file mode", total_chars)
@@ -395,6 +571,86 @@ class SaveReq(BaseModel):
     filename: str
     analysis: dict
     tags: list = []
+
+
+INTENT_TAGS = {
+    "快速看懂": "快速看懂",
+    "精读导读": "精读导读",
+    "精读导航": "精读导读",
+    "带问题读": "带问题读",
+    "带问题阅读": "带问题读",
+    "文献笔记": "文献笔记",
+    "审稿视角": "审稿视角",
+    "选题推进": "选题推进",
+    "研究推进": "选题推进",
+    "快速了解": "快速看懂",
+    "定向问答": "带问题读",
+    "结构化笔记": "文献笔记",
+    "批判性分析": "审稿视角",
+    "延伸研究": "选题推进",
+}
+
+
+def _clean_tag(tag: str) -> str:
+    tag = str(tag or "").strip()
+    for prefix in ("分析:", "作者:", "年份:"):
+        if tag.startswith(prefix):
+            return tag[len(prefix):].strip()
+    return tag
+
+
+def _split_authors(authors: str) -> list[str]:
+    if not authors:
+        return []
+    parts = re.split(r"[;,，、]| and | & ", authors)
+    return [p.strip() for p in parts if p.strip()][:6]
+
+
+def _library_tags(req: SaveReq) -> list[str]:
+    tags = []
+    for tag in req.tags or []:
+        clean_tag = _clean_tag(tag)
+        if clean_tag and clean_tag not in tags:
+            tags.append(clean_tag)
+
+    meta = req.analysis.get("_meta") or {}
+    intent = meta.get("intent") or req.analysis.get("intent") or ""
+    if intent:
+        tags.append(INTENT_TAGS.get(intent, intent))
+    else:
+        tags.append("未标注")
+
+    for author in _split_authors(req.analysis.get("authors", "")):
+        tags.append(author)
+
+    year = req.analysis.get("year", "")
+    if year:
+        tags.append(str(year))
+
+    seen = set()
+    clean = []
+    for tag in tags:
+        if tag not in seen:
+            clean.append(tag)
+            seen.add(tag)
+    return clean
+
+
+def _library_tags_from_data(data: dict) -> list[str]:
+    analysis = data.get("analysis") or {}
+    pseudo = SaveReq(
+        file_id="0",
+        filename=data.get("filename", ""),
+        analysis=analysis,
+        tags=data.get("tags", []),
+    )
+    return _library_tags(pseudo)
+
+
+def _analysis_method_from_data(data: dict) -> str:
+    analysis = data.get("analysis") or {}
+    meta = analysis.get("_meta") or {}
+    return meta.get("intent") or analysis.get("intent") or data.get("analysis_method", "") or "未标注"
 
 
 def _lib_meta_path(lib_id: str) -> Path:
@@ -417,19 +673,6 @@ async def library_save(req: SaveReq):
         raise HTTPException(404, "Source PDF not found")
 
     title = req.analysis.get("title", "")
-    for f in LIBRARY_DIR.glob("*.json"):
-        try:
-            existing = json.loads(f.read_text(encoding="utf-8"))
-            if existing.get("filename") == req.filename and existing.get("title") == title:
-                lib_id = existing["id"]
-                shutil.copy(src, _lib_pdf_path(lib_id))
-                existing["analysis"] = req.analysis
-                existing["saved_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
-                f.write_text(json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8")
-                return {"id": lib_id, "updated": True}
-        except Exception:
-            pass
-
     lib_id = str(uuid.uuid4())
     shutil.copy(src, _lib_pdf_path(lib_id))
     meta = {
@@ -438,8 +681,9 @@ async def library_save(req: SaveReq):
         "title": title,
         "authors": req.analysis.get("authors", ""),
         "year": req.analysis.get("year", ""),
+        "analysis_method": (req.analysis.get("_meta") or {}).get("intent", ""),
         "saved_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "tags": req.tags,
+        "tags": _library_tags(req),
         "analysis": req.analysis,
     }
     _lib_meta_path(lib_id).write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -456,6 +700,51 @@ async def library_list():
         except Exception:
             pass
     return items
+
+
+@app.get("/library/export")
+async def library_export():
+    """Export the whole library folder as a portable zip archive."""
+    ts = time.strftime("%Y%m%d-%H%M%S")
+    archive = DATA_DIR / f"paperknowknow-library-{ts}.zip"
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in LIBRARY_DIR.glob("*"):
+            if p.is_file():
+                zf.write(p, arcname=f"library/{p.name}")
+    return FileResponse(
+        str(archive),
+        media_type="application/zip",
+        filename=archive.name,
+    )
+
+
+@app.post("/library/organize")
+async def library_organize():
+    """Upgrade old library records with method/author/year tags without touching analysis text."""
+    scanned = 0
+    changed = 0
+    for f in LIBRARY_DIR.glob("*.json"):
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+            scanned += 1
+            before = json.dumps(data, ensure_ascii=False, sort_keys=True)
+
+            analysis = data.get("analysis") or {}
+            data["schema_version"] = max(int(data.get("schema_version") or 1), 2)
+            data["title"] = data.get("title") or analysis.get("title", "")
+            data["authors"] = data.get("authors") or analysis.get("authors", "")
+            data["year"] = data.get("year") or analysis.get("year", "")
+            data["analysis_method"] = _analysis_method_from_data(data)
+            data["tags"] = _library_tags_from_data(data)
+            data["organized_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+
+            after = json.dumps(data, ensure_ascii=False, sort_keys=True)
+            if before != after:
+                f.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+                changed += 1
+        except Exception:
+            logger.warning("Failed to organize library item %s", f, exc_info=True)
+    return {"ok": True, "scanned": scanned, "changed": changed}
 
 
 @app.get("/library/{lib_id}/analysis")
@@ -563,6 +852,205 @@ async def library_delete(lib_id: str):
     return {"ok": True}
 
 
+# ── 验证（扩展支持 DeepSeek / Groq / Mistral）─────────────────────────────────
+
+class ValidateExtReq(BaseModel):
+    provider: str
+    api_key:  str
+    model:    str = ""
+
+@app.post("/validate_ext")
+async def validate_ext(req: ValidateExtReq):
+    """支持所有六个服务商的 Key 验证"""
+    if not req.api_key:
+        return {"valid": False, "error": "API Key 不能为空"}
+
+    import asyncio
+    loop = asyncio.get_event_loop()
+
+    def _do_verify():
+        try:
+            if req.provider in ("claude", "openai", "gemini"):
+                # 复用原有验证逻辑（同步包装）
+                import asyncio as _a
+                _a.run(validate_key(req.provider, req.api_key, req.model))
+                return {"valid": True}
+
+            elif req.provider == "deepseek":
+                import openai as _oa
+                c = _oa.OpenAI(api_key=req.api_key, base_url="https://api.deepseek.com")
+                r = c.chat.completions.create(
+                    model=req.model or "deepseek-chat",
+                    messages=[{"role": "user", "content": "hi"}], max_tokens=4,
+                )
+                return {"valid": True, "message": f"验证成功 · {req.model or 'deepseek-chat'}"}
+
+            elif req.provider == "groq":
+                import openai as _oa
+                c = _oa.OpenAI(api_key=req.api_key, base_url="https://api.groq.com/openai/v1")
+                r = c.chat.completions.create(
+                    model=req.model or "llama-3.3-70b-versatile",
+                    messages=[{"role": "user", "content": "hi"}], max_tokens=4,
+                )
+                return {"valid": True, "message": f"验证成功 · {req.model or 'llama-3.3-70b-versatile'}"}
+
+            elif req.provider == "mistral":
+                import openai as _oa
+                c = _oa.OpenAI(api_key=req.api_key, base_url="https://api.mistral.ai/v1")
+                r = c.chat.completions.create(
+                    model=req.model or "mistral-small-latest",
+                    messages=[{"role": "user", "content": "hi"}], max_tokens=4,
+                )
+                return {"valid": True, "message": f"验证成功 · {req.model or 'mistral-small-latest'}"}
+
+            return {"valid": False, "error": "未知服务商"}
+        except Exception as e:
+            msg = str(e)
+            if "401" in msg or "authentication" in msg.lower() or "invalid" in msg.lower():
+                return {"valid": False, "error": "API Key 无效"}
+            if "429" in msg or "rate" in msg.lower():
+                return {"valid": True, "warning": "Key 有效（当前触发速率限制）"}
+            return {"valid": False, "error": _friendly(msg)}
+
+    result = await loop.run_in_executor(None, _do_verify)
+    return result
+
+
+# ── KnowKnow API ──────────────────────────────────────────────────────────────
+
+_battle_sessions: dict = {}
+_BATTLE_TTL = 3600  # 1 hour
+
+
+def _cleanup_expired_sessions():
+    now = time.time()
+    expired = [k for k, v in _battle_sessions.items() if now - v.get("ts", 0) > _BATTLE_TTL]
+    for k in expired:
+        del _battle_sessions[k]
+
+
+class BattleStartReq(BaseModel):
+    topic:         str
+    provider:      str
+    api_key:       str
+    model:         str = ""
+    mode:          str = "battle"   # "battle" | "chat"
+    lang:          str = "Chinese"
+    paper_context: dict = {}        # {title, core_question, key_insight, themes:[...]}
+
+
+@app.post("/battle/start")
+async def battle_start(req: BattleStartReq):
+    import asyncio, uuid as _uuid
+    loop = asyncio.get_event_loop()
+    try:
+        first_q = await loop.run_in_executor(
+            None,
+            lambda: bt.attack_first(
+                req.topic, req.paper_context,
+                req.provider, req.api_key, req.model, req.mode, req.lang,
+            ),
+        )
+    except Exception as e:
+        raise HTTPException(500, _friendly(str(e)))
+
+    _cleanup_expired_sessions()
+    sid = _uuid.uuid4().hex[:8]
+    _battle_sessions[sid] = {
+        "ts":      time.time(),
+        "topic":   req.topic,
+        "context": req.paper_context,
+        "provider":req.provider,
+        "api_key": req.api_key,
+        "model":   req.model,
+        "mode":    req.mode,
+        "lang":    req.lang,
+        "history": [
+            {"role": "user",      "content": f"我刚读了论文「{req.topic}」，准备开始这一轮。"},
+            {"role": "assistant", "content": first_q},
+        ],
+    }
+    return {"session_id": sid, "question": first_q}
+
+
+class BattleChatReq(BaseModel):
+    session_id: str
+    message:    str
+
+
+@app.post("/battle/chat")
+async def battle_chat(req: BattleChatReq):
+    import asyncio
+    s = _battle_sessions.get(req.session_id)
+    if not s:
+        raise HTTPException(404, "会话不存在或已过期")
+
+    s["history"].append({"role": "user", "content": req.message})
+    loop = asyncio.get_event_loop()
+    try:
+        reply = await loop.run_in_executor(
+            None,
+            lambda: bt.attack_reply(
+                s["topic"], s["context"], s["history"],
+                s["provider"], s["api_key"], s["model"], s.get("mode", "battle"), s.get("lang", "Chinese"),
+            ),
+        )
+    except Exception as e:
+        s["history"].pop()
+        raise HTTPException(500, _friendly(str(e)))
+
+    s["history"].append({"role": "assistant", "content": reply})
+    return {"reply": reply}
+
+
+class BattleHelpReq(BaseModel):
+    session_id: str
+    stuck_on:   str
+
+
+@app.post("/battle/help")
+async def battle_help(req: BattleHelpReq):
+    import asyncio
+    s = _battle_sessions.get(req.session_id)
+    if not s:
+        raise HTTPException(404, "会话不存在或已过期")
+
+    loop = asyncio.get_event_loop()
+    try:
+        scaffold = await loop.run_in_executor(
+            None,
+            lambda: bt.companion_help(
+                s["topic"], req.stuck_on,
+                s["provider"], s["api_key"], s["model"], s.get("lang", "Chinese"),
+            ),
+        )
+    except Exception as e:
+        raise HTTPException(500, _friendly(str(e)))
+    return {"scaffold": scaffold}
+
+
+class BattleEndReq(BaseModel):
+    session_id: str
+
+
+@app.post("/battle/end")
+async def battle_end(req: BattleEndReq):
+    import asyncio
+    s = _battle_sessions.pop(req.session_id, None)
+    if not s:
+        raise HTTPException(404, "会话不存在或已过期")
+
+    loop = asyncio.get_event_loop()
+    summary = await loop.run_in_executor(
+        None,
+        lambda: bt.summarize(
+            s["topic"], s["history"],
+            s["provider"], s["api_key"], s["model"], s.get("lang", "Chinese"),
+        ),
+    )
+    return summary
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _friendly(msg: str) -> str:
@@ -601,7 +1089,7 @@ def _run_as_app(port: int) -> None:
 
     # ── Build window first so user sees something right away ──────
     root = tk.Tk()
-    root.title("论文阅读助手")
+    root.title("PaperKnowKnow")
     root.resizable(False, False)
     root.configure(bg="#F7F6F3")
 
@@ -614,7 +1102,7 @@ def _run_as_app(port: int) -> None:
     f = tk.Frame(root, bg="#F7F6F3", padx=24, pady=16)
     f.pack(fill="both", expand=True)
 
-    tk.Label(f, text="论文阅读助手", font=("Helvetica", 15, "bold"),
+    tk.Label(f, text="PaperKnowKnow", font=("Helvetica", 15, "bold"),
              bg="#F7F6F3", fg="#37352F").pack()
 
     status_var = tk.StringVar(value="⏳  启动中，请稍候…")
@@ -654,7 +1142,7 @@ def _run_as_app(port: int) -> None:
             try:
                 uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
             except Exception:
-                log = Path.home() / "PaperReader_error.log"
+                log = Path.home() / "PaperKnowKnow_error.log"
                 log.write_text(_tb.format_exc(), encoding="utf-8")
 
         threading.Thread(target=_run_server, daemon=True).start()

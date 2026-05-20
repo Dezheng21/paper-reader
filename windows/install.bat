@@ -1,11 +1,11 @@
 @echo off
-title Paper Reader - Install
+title PaperKnowKnow - Install
 cd /d "%~dp0\.."
 set ROOT=%cd%
 
 echo.
 echo ==========================================
-echo    Paper Reader  --  First-time Install
+echo    PaperKnowKnow  --  First-time Install
 echo ==========================================
 echo.
 
@@ -102,19 +102,19 @@ if not exist "library" mkdir library
 
 :: ── Create desktop shortcut ───────────────────────────────────
 echo [..] Creating desktop shortcut...
-powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $lnk = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\Paper Reader.lnk'); $lnk.TargetPath = '%ROOT%\windows\run.bat'; $lnk.WorkingDirectory = '%ROOT%'; $lnk.Description = 'Paper Reader - AI Paper Analysis'; $lnk.Save()"
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $lnk = $ws.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\PaperKnowKnow.lnk'); $lnk.TargetPath = '%ROOT%\windows\run.bat'; $lnk.WorkingDirectory = '%ROOT%'; $lnk.Description = 'PaperKnowKnow - AI Paper Analysis'; $lnk.Save()"
 if errorlevel 1 (
     echo [WARN] Could not create desktop shortcut automatically.
     echo        Please create it manually: right-click run.bat -^> Send to -^> Desktop
 ) else (
-    echo [OK] Shortcut created on Desktop: Paper Reader.lnk
+    echo [OK] Shortcut created on Desktop: PaperKnowKnow.lnk
 )
 
 echo.
 echo ==========================================
 echo    [OK] Installation complete!
 echo.
-echo    Launch: double-click "Paper Reader" on your Desktop
+echo    Launch: double-click "PaperKnowKnow" on your Desktop
 echo    Or run: windows\run.bat
 echo ==========================================
 echo.
