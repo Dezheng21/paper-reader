@@ -331,6 +331,19 @@ async def validate_key(provider: str, api_key: str, model: str = "") -> None:
         )
 
 
+_LANG_NATIVE = {
+    "Chinese": "Simplified Chinese (中文 / 简体)",
+    "English": "English",
+    "Chinese Traditional": "Traditional Chinese (繁體中文)",
+    "Japanese": "Japanese (日本語)",
+    "Korean": "Korean (한국어)",
+    "French": "French (Français)",
+    "German": "German (Deutsch)",
+    "Spanish": "Spanish (Español)",
+    "Vietnamese": "Vietnamese (Tiếng Việt)",
+}
+
+
 async def analyze_paper(
     pages: List[Dict], provider: str, api_key: str, depth: str, model: str = "",
     lang: str = "Chinese", intent: str = "quick", learn_lang: bool = False,
@@ -339,12 +352,32 @@ async def analyze_paper(
     # Scale output tokens with input length; cap at 16 384 for broad API compatibility
     max_out_tokens = max(8192, min(16384, max_chars // 8))
 
+    # Expand the language label so the model sees both English name AND native script
+    lang_full = _LANG_NATIVE.get(lang, lang)
+
     if pdf_path:
-        prompt = _build_prompt_pdf(depth, lang, intent, learn_lang, intent_question)
+        prompt = _build_prompt_pdf(depth, lang_full, intent, learn_lang, intent_question)
         logger.info("Using PDF-file mode (scanned/image PDF)")
     else:
-        prompt = _build_prompt(pages, depth, lang, intent, learn_lang, intent_question,
+        prompt = _build_prompt(pages, depth, lang_full, intent, learn_lang, intent_question,
                                max_chars=max_chars)
+
+    # Wrap a final language reminder at the END of the prompt — models give
+    # most weight to instructions placed last, and Gemini/multimodal models
+    # tend to default to the document's language otherwise.
+    prompt = (
+        f"=== OUTPUT LANGUAGE DIRECTIVE — READ FIRST ===\n"
+        f"You MUST write every text field in: {lang_full}.\n"
+        f"This is non-negotiable. Even though the source paper may be in a different language\n"
+        f"(e.g. Korean, English, Japanese), you must translate everything into {lang_full}.\n"
+        f"Only verbatim citation quotes and text_hint fields keep the paper's original language.\n"
+        f"==============================================\n\n"
+        + prompt
+        + f"\n\n=== FINAL REMINDER ===\n"
+        f"Before returning, double-check every text field is in {lang_full}.\n"
+        f"If the paper is in Korean/Chinese/etc. and {lang_full} differs from that, you are\n"
+        f"performing a TRANSLATION — not a transcription. Do NOT output in the paper's language.\n"
+    )
 
     COMPAT_PROVIDERS = {
         "deepseek": ("https://api.deepseek.com",      "deepseek-chat"),
@@ -495,10 +528,12 @@ async def _claude_pdf(prompt: str, pdf_path: str, api_key: str, model: str, max_
     msg = client.messages.create(
         model=model or "claude-sonnet-4-6",
         max_tokens=max_out_tokens,
+        temperature=0.3,
         system="You are a research paper analyzer. Respond with valid JSON only, no markdown.",
+        # Put text prompt FIRST so the language directive isn't diluted by document tokens.
         messages=[{"role": "user", "content": [
-            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_b64}},
             {"type": "text", "text": prompt},
+            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_b64}},
         ]}],
     )
     u = msg.usage
@@ -527,9 +562,11 @@ async def _openai_pdf(prompt: str, pdf_path: str, api_key: str, model: str, max_
         model=model or "gpt-4o",
         messages=[
             {"role": "system", "content": "You analyze academic papers. Respond with valid JSON only."},
-            {"role": "user", "content": images + [{"type": "text", "text": prompt}]},
+            # Text prompt before images, so language directive isn't drowned out.
+            {"role": "user", "content": [{"type": "text", "text": prompt}] + images},
         ],
         max_tokens=max_out_tokens,
+        temperature=0.3,
         response_format={"type": "json_object"},
     )
     u = resp.usage
@@ -550,13 +587,15 @@ async def _gemini_pdf(prompt: str, pdf_path: str, api_key: str, model: str, max_
     client = genai.Client(api_key=api_key)
     resp = client.models.generate_content(
         model=model or "gemini-2.5-flash",
+        # Put the prompt FIRST so the language directive isn't drowned by the PDF tokens.
         contents=[
-            genai_types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
             prompt,
+            genai_types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
         ],
         config=genai_types.GenerateContentConfig(
             response_mime_type="application/json",
             max_output_tokens=max_out_tokens,
+            temperature=0.3,  # low temp → strict instruction-following
         ),
     )
     u = resp.usage_metadata

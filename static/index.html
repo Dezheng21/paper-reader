@@ -909,21 +909,19 @@ body { display: flex; flex-direction: column; background: var(--bg); }
         <div class="validate-result" id="validateResult"></div>
         <small>仅存储在本地浏览器，不上传到服务器</small>
       </div>
-      <div class="field">
-        <label>输出语言</label>
-        <select id="langSel">
-          <option value="Chinese">中文（简体）</option>
-          <option value="English">English</option>
-          <option value="Chinese Traditional">中文（繁體）</option>
-          <option value="Japanese">日本語</option>
-          <option value="Korean">한국어</option>
-          <option value="French">Français</option>
-          <option value="German">Deutsch</option>
-          <option value="Spanish">Español</option>
-          <option value="Vietnamese">Tiếng Việt</option>
-        </select>
-        <small>无论论文用何种语言，AI 分析结果将翻译为此语言</small>
-      </div>
+      <!-- Output language is now chosen in the analysis modal (per-analysis), -->
+      <!-- but the langSel element is kept (hidden) so existing JS doesn't break. -->
+      <select id="langSel" style="display:none">
+        <option value="Chinese">中文（简体）</option>
+        <option value="English">English</option>
+        <option value="Chinese Traditional">中文（繁體）</option>
+        <option value="Japanese">日本語</option>
+        <option value="Korean">한국어</option>
+        <option value="French">Français</option>
+        <option value="German">Deutsch</option>
+        <option value="Spanish">Español</option>
+        <option value="Vietnamese">Tiếng Việt</option>
+      </select>
       <div class="field">
         <label>模型 <span class="opt">（留空使用默认）</span></label>
         <input type="text" id="modelIn" placeholder="如 claude-sonnet-4-6、gpt-4o…">
