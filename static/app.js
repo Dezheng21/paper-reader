@@ -1833,6 +1833,7 @@ function syncEditableToStructure() {
     if (path === 'guide_intro')    structure.guide_intro    = val;
     else if (path === 'core_question')  structure.core_question  = val;
     else if (path === 'key_insight')    structure.key_insight    = val;
+    else if (path === 'one_line_thesis') structure.one_line_thesis = val;
     else if (path === 'skeptics_note')  structure.skeptics_note  = val;
     else if (path.startsWith('theme.')) {
       const [, id, field] = path.split('.');
@@ -2522,6 +2523,16 @@ function renderGuide(data) {
     <div class="guide-paper-meta">${esc(data.authors || '')}${data.year ? ' · ' + esc(data.year) : ''}</div>
   </div>`;
 
+  // ── Cognition Layer (认知层) — visual anchor at top ────────────────
+  html += renderCognitionLayer(data);
+
+  // Toggle: collapse/expand the details below
+  html += `<div class="details-toggle" onclick="toggleDetailsLayer()">
+    <span class="details-toggle-text" id="detailsToggleText">展开完整分析</span>
+    <span class="details-toggle-icon" id="detailsToggleIcon">▾</span>
+  </div>`;
+
+  html += `<div class="details-layer collapsed" id="detailsLayer">`;
   html += renderOverviewDashboard(data);
 
   // Analysis metadata footnote
@@ -2760,8 +2771,57 @@ function renderGuide(data) {
       <div class="ref-keywords">${data.ref_keywords.map(k => `<span class="ref-tag">${esc(k)}</span>`).join('')}</div></div>`;
   }
 
+  html += `</div>`;  // close .details-layer
+
   sidebarBody.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(html) : html;
   renderAnnotations();
+}
+
+// ── Cognition Layer renderer ──────────────────────────────────────────
+function renderCognitionLayer(data) {
+  const thesis = data.one_line_thesis || '';
+  const pillars = Array.isArray(data.three_pillars) ? data.three_pillars : [];
+  const shortcut = data.reading_shortcut || '';
+  if (!thesis && !pillars.length && !shortcut) return '';
+
+  let html = `<div class="cognition-layer">`;
+
+  if (thesis) {
+    html += `<div class="cog-thesis" contenteditable="true" data-path="one_line_thesis">${esc(thesis)}</div>`;
+  }
+
+  if (pillars.length) {
+    html += `<div class="cog-pillars">`;
+    pillars.forEach((p, i) => {
+      const label = p.label || ['为什么重要', '怎么知道的', '所以呢'][i] || '';
+      const text  = p.text || '';
+      html += `<div class="cog-pillar">
+        <div class="cog-pillar-label">${esc(label)}</div>
+        <div class="cog-pillar-text">${esc(text)}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (shortcut) {
+    html += `<div class="cog-shortcut">
+      <span class="cog-shortcut-icon">💡</span>
+      <span class="cog-shortcut-text">${esc(shortcut)}</span>
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function toggleDetailsLayer() {
+  const layer = document.getElementById('detailsLayer');
+  const text  = document.getElementById('detailsToggleText');
+  const icon  = document.getElementById('detailsToggleIcon');
+  if (!layer) return;
+  const isCollapsed = layer.classList.toggle('collapsed');
+  if (text) text.textContent = isCollapsed ? '展开完整分析' : '收起完整分析';
+  if (icon) icon.textContent = isCollapsed ? '▾' : '▴';
 }
 
 function toggleTheme(id) {

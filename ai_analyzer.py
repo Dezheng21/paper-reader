@@ -146,6 +146,13 @@ Return ONLY a valid JSON object (no markdown fences) with this exact structure:
   "title": "paper title in {lang}",
   "authors": "author names",
   "year": "year or empty string",
+  "one_line_thesis": "THE single most important claim of the paper, in ONE punchy sentence (target: under 30 chars/words). What the reader should remember if they only remember one thing. Sharp, declarative, no hedging. Example: '居住地安全感比国族自豪感更能预测移民态度'",
+  "three_pillars": [
+    {{"label": "为什么重要", "text": "Why this paper matters — the gap or tension it addresses. 1 short sentence."}},
+    {{"label": "怎么知道的", "text": "The core method or evidence path. 1 short sentence."}},
+    {{"label": "所以呢", "text": "The implication, application, or boundary. 1 short sentence."}}
+  ],
+  "reading_shortcut": "One concrete reading hint, e.g. '只读 1 分钟 → 看 P3 第二段「核心发现」'. Be specific about page and what to find there.",
   "core_question": "The single central question this paper addresses. One sentence.",
   "key_insight": "The most important or surprising finding. 1-2 sentences with personality.",
   "guide_intro": "Opening paragraph (3-5 sentences). Avoid starting with 'This paper...'",
@@ -184,6 +191,9 @@ Return ONLY a valid JSON object (no markdown fences) with this exact structure:
 }}
 
 Rules:
+- one_line_thesis: this is THE cognitive anchor. Make it punchy and concrete. Never start with vague phrases like "This paper explores..." — make the actual claim. If the paper's contribution can't fit in one sharp sentence, the paper has multiple claims and you should pick the most important one.
+- three_pillars: must be tightly coupled — pillar 1 sets up the gap, pillar 2 explains how the paper closes it, pillar 3 says what changes because of that. Do not just restate the abstract.
+- reading_shortcut: must reference a SPECIFIC page and paragraph/section where the core finding is stated. Useless if vague.
 - theme headings must be idea-based, never bare section names
 - every page_ref must have text_hint in the paper's original language
 - read_this_if: 2-4 entries, practical and specific. For each location: "page" is the page number, "lines" is an approximate line range on that page (e.g. "3~12"), "hint" is a verbatim 5-8 word phrase from the paper text at that location (original language)
@@ -223,6 +233,13 @@ Return ONLY a valid JSON object (no markdown fences) with this exact structure:
   "title": "paper title in {lang}",
   "authors": "author names",
   "year": "year or empty string",
+  "one_line_thesis": "THE single most important claim of the paper, in ONE punchy sentence (target: under 30 chars/words). What the reader should remember if they only remember one thing. Sharp, declarative, no hedging. Example: '居住地安全感比国族自豪感更能预测移民态度'",
+  "three_pillars": [
+    {{"label": "为什么重要", "text": "Why this paper matters — the gap or tension it addresses. 1 short sentence."}},
+    {{"label": "怎么知道的", "text": "The core method or evidence path. 1 short sentence."}},
+    {{"label": "所以呢", "text": "The implication, application, or boundary. 1 short sentence."}}
+  ],
+  "reading_shortcut": "One concrete reading hint, e.g. '只读 1 分钟 → 看 P3 第二段「核心发现」'. Be specific about page and what to find there.",
   "core_question": "The single central question this paper addresses. One sentence.",
   "key_insight": "The most important or surprising finding. 1-2 sentences with personality.",
   "guide_intro": "Opening paragraph (3-5 sentences). Avoid starting with 'This paper...'",
@@ -261,6 +278,9 @@ Return ONLY a valid JSON object (no markdown fences) with this exact structure:
 }}
 
 Rules:
+- one_line_thesis: this is THE cognitive anchor. Make it punchy and concrete. Never start with vague phrases like "This paper explores..." — make the actual claim. If the paper's contribution can't fit in one sharp sentence, the paper has multiple claims and you should pick the most important one.
+- three_pillars: must be tightly coupled — pillar 1 sets up the gap, pillar 2 explains how the paper closes it, pillar 3 says what changes because of that. Do not just restate the abstract.
+- reading_shortcut: must reference a SPECIFIC page and paragraph/section where the core finding is stated. Useless if vague.
 - theme headings must be idea-based, never bare section names
 - every page_ref must have text_hint in the paper's original language
 - read_this_if: 2-4 entries, practical and specific. For each location: "page" is the page number, "lines" is an approximate line range on that page (e.g. "3~12"), "hint" is a verbatim 5-8 word phrase from the paper text at that location (original language)

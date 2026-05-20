@@ -554,3 +554,112 @@ body {
   from { transform: translateY(14px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
+
+/* ── Cognition Layer (认知层) ─────────────────────────────────────── */
+.cognition-layer {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAF9F6 100%);
+  border: 1px solid #E8E5DD;
+  border-radius: 12px;
+  padding: 22px 22px 18px;
+  margin: 14px 0 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.cog-thesis {
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #1A1A1A;
+  letter-spacing: 0.2px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  transition: background 0.15s;
+}
+.cog-thesis:focus {
+  outline: none;
+  background: rgba(35,131,226,0.04);
+}
+.cog-thesis::before {
+  content: "★";
+  color: #2383E2;
+  margin-right: 8px;
+  font-size: 16px;
+  vertical-align: 2px;
+}
+
+.cog-pillars {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.cog-pillar {
+  padding: 10px 12px;
+  background: rgba(35,131,226,0.04);
+  border: 1px solid rgba(35,131,226,0.10);
+  border-radius: 8px;
+  min-width: 0;
+}
+.cog-pillar-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2383E2;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  text-transform: none;
+}
+.cog-pillar-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #37352F;
+}
+
+.cog-shortcut {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255,196,76,0.10);
+  border-left: 3px solid #F4B400;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #5C4A1E;
+}
+.cog-shortcut-icon { flex-shrink: 0; font-size: 14px; }
+.cog-shortcut-text { flex: 1; }
+
+@media (max-width: 720px) {
+  .cog-pillars { grid-template-columns: 1fr; }
+}
+
+/* ── Details Toggle ──────────────────────────────────────────────── */
+.details-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  margin: 10px 0 12px;
+  background: transparent;
+  border: 1px dashed #D4D2CB;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6E6B66;
+  user-select: none;
+  transition: all 0.15s;
+}
+.details-toggle:hover {
+  background: rgba(35,131,226,0.04);
+  border-color: rgba(35,131,226,0.20);
+  color: #2383E2;
+}
+.details-toggle-icon { font-size: 10px; }
+
+/* ── Details Layer (existing content, visually muted) ─────────────── */
+.details-layer.collapsed { display: none; }
+.details-layer {
+  opacity: 0.92;
+}
