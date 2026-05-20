@@ -102,6 +102,7 @@ const TRANSLATIONS = {
     tab_new_title: '新标签页', learnlang_tooltip: '开启后，AI 会在分析结果中额外提取 5-8 个核心术语，附上原文词汇、译文和释义。适合在阅读外文文献时同步学习专业词汇。会额外消耗少量 token。',
     expand_full: '展开完整分析', collapse_full: '收起完整分析',
     mismatch: '你选择的输出语言（{out}）和界面语言（{ui}）不同，确定要继续吗？',
+    pdf_locate: 'PDF 定位', lines_label: '{r} 行',
   },
   en: {
     title: 'PaperKnowKnow', open_paper: 'Open Paper', analyze_btn: 'Analyze',
@@ -145,6 +146,7 @@ const TRANSLATIONS = {
     tab_new_title: 'New tab', learnlang_tooltip: 'When enabled, AI will extract 5–8 key terms with original vocabulary, translation, and definitions. Useful for reading foreign-language papers. Uses a small amount of extra tokens.',
     expand_full: 'Show full analysis', collapse_full: 'Hide full analysis',
     mismatch: 'Output language ({out}) differs from UI language ({ui}). Continue?',
+    pdf_locate: 'Find in PDF', lines_label: 'lines {r}',
   },
   'zh-TW': {
     title: 'PaperKnowKnow', open_paper: '開啟論文', analyze_btn: '論文分析',
@@ -188,6 +190,7 @@ const TRANSLATIONS = {
     tab_new_title: '新標籤頁', learnlang_tooltip: '開啟後，AI 會在分析結果中額外提取 5-8 個核心術語，附上原文詞彙、譯文和釋義。適合閱讀外文文獻時同步學習專業詞彙。會額外消耗少量 token。',
     expand_full: '展開完整分析', collapse_full: '收起完整分析',
     mismatch: '你選擇的輸出語言（{out}）和介面語言（{ui}）不同，確定要繼續嗎？',
+    pdf_locate: 'PDF 定位', lines_label: '{r} 行',
   },
   ja: {
     title: 'PaperKnowKnow', open_paper: '論文を開く', analyze_btn: '論文分析',
@@ -231,6 +234,7 @@ const TRANSLATIONS = {
     tab_new_title: '新しいタブ', learnlang_tooltip: '有効にすると、AIが解説に5〜8つのキー用語を追加します（原文・訳・解説付き）。外国語論文を読む際の語彙学習に役立ちます。少量の追加トークンが必要です。',
     expand_full: '完全な分析を表示', collapse_full: '完全な分析を非表示',
     mismatch: '出力言語（{out}）が画面の言語（{ui}）と異なります。続行しますか？',
+    pdf_locate: 'PDFで探す', lines_label: '{r} 行',
   },
   ko: {
     title: 'PaperKnowKnow', open_paper: '논문 열기', analyze_btn: '논문 분석',
@@ -274,6 +278,7 @@ const TRANSLATIONS = {
     tab_new_title: '새 탭', learnlang_tooltip: '활성화하면 AI가 5~8개의 핵심 용어를 원문, 번역, 설명과 함께 추출합니다. 외국어 논문 읽기에 유용합니다. 소량의 추가 토큰이 필요합니다.',
     expand_full: '전체 분석 펼치기', collapse_full: '전체 분석 접기',
     mismatch: '선택한 출력 언어({out})와 화면 언어({ui})가 다릅니다. 계속할까요?',
+    pdf_locate: 'PDF에서 찾기', lines_label: '{r}행',
   },
   fr: {
     title: 'PaperKnowKnow', open_paper: 'Ouvrir', analyze_btn: 'Analyser',
@@ -317,6 +322,7 @@ const TRANSLATIONS = {
     tab_new_title: 'Nouvel onglet', learnlang_tooltip: "Activé, l'IA extrait 5 à 8 termes clés avec vocabulaire original, traduction et définition. Utile pour les documents en langue étrangère. Consomme quelques tokens supplémentaires.",
     expand_full: 'Afficher l’analyse complète', collapse_full: 'Masquer l’analyse complète',
     mismatch: 'La langue de sortie ({out}) diffère de la langue d’interface ({ui}). Continuer ?',
+    pdf_locate: 'Trouver dans le PDF', lines_label: 'lignes {r}',
   },
   de: {
     title: 'PaperKnowKnow', open_paper: 'Öffnen', analyze_btn: 'Analysieren',
@@ -360,6 +366,7 @@ const TRANSLATIONS = {
     tab_new_title: 'Neuer Tab', learnlang_tooltip: 'Wenn aktiviert, extrahiert die KI 5–8 Schlüsselbegriffe mit Originalvokabular, Übersetzung und Definition. Nützlich beim Lesen fremdsprachiger Dokumente. Verbraucht geringe zusätzliche Token.',
     expand_full: 'Vollständige Analyse anzeigen', collapse_full: 'Vollständige Analyse ausblenden',
     mismatch: 'Ausgabesprache ({out}) unterscheidet sich von der Oberfläche ({ui}). Fortfahren?',
+    pdf_locate: 'Im PDF finden', lines_label: 'Zeilen {r}',
   },
   es: {
     title: 'PaperKnowKnow', open_paper: 'Abrir', analyze_btn: 'Analizar',
@@ -403,6 +410,7 @@ const TRANSLATIONS = {
     tab_new_title: 'Nueva pestaña', learnlang_tooltip: 'Cuando está activado, la IA extrae 5-8 términos clave con vocabulario original, traducción y definición. Útil para leer documentos en idiomas extranjeros. Consume pocos tokens adicionales.',
     expand_full: 'Mostrar análisis completo', collapse_full: 'Ocultar análisis completo',
     mismatch: 'El idioma de salida ({out}) difiere del idioma de interfaz ({ui}). ¿Continuar?',
+    pdf_locate: 'Buscar en PDF', lines_label: 'líneas {r}',
   },
   vi: {
     title: 'PaperKnowKnow', open_paper: 'Mở bài báo', analyze_btn: 'Phân tích',
@@ -446,6 +454,7 @@ const TRANSLATIONS = {
     tab_new_title: 'Tab mới', learnlang_tooltip: 'Khi bật, AI sẽ trích xuất 5-8 thuật ngữ quan trọng kèm từ gốc, bản dịch và định nghĩa. Hữu ích khi đọc tài liệu ngoại ngữ. Tiêu tốn thêm một ít token.',
     expand_full: 'Hiện phân tích đầy đủ', collapse_full: 'Ẩn phân tích đầy đủ',
     mismatch: 'Ngôn ngữ đầu ra ({out}) khác với giao diện ({ui}). Tiếp tục?',
+    pdf_locate: 'Tìm trong PDF', lines_label: 'dòng {r}',
   },
 };
 
@@ -598,6 +607,10 @@ function t(key, vars) {
 function fillVars(s, vars = {}) {
   return String(s || '').replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 }
+
+// Localized page / line-range labels
+function pageLabel(n) { return t('page_label', { n }); }
+function linesLabel(r) { return t('lines_label', { r }); }
 
 function applyIntentUi() {
   const c = ui();
@@ -1236,11 +1249,11 @@ function renderAnnotations() {
       <div class="annot-item">
         <div class="annot-item-head">
           <div class="annot-item-quote page-ref-btn" data-page="${a.page}" style="cursor:pointer"
-               title="跳转到第 ${a.page} 页">${esc(a.text.slice(0, 60))}${a.text.length > 60 ? '…' : ''}</div>
+               title="${esc(pageLabel(a.page))}">${esc(a.text.slice(0, 60))}${a.text.length > 60 ? '…' : ''}</div>
           <button class="annot-item-del" data-action="del-annot" data-id="${a.id}">✕</button>
         </div>
         <div class="annot-item-note">${esc(a.note)}</div>
-        <div class="annot-item-meta">第 ${a.page} 页 · ${esc(a.created_at)}</div>
+        <div class="annot-item-meta">${esc(pageLabel(a.page))} · ${esc(a.created_at)}</div>
       </div>`).join('');
   sidebarBody.appendChild(sec);
 }
@@ -1772,7 +1785,7 @@ function exportNotes() {
       nl(`### ${t.heading}`);
       if (t.narrative) nl(t.narrative);
       if (t.highlight) nl(`\n> ${t.highlight}`);
-      if (t.page_refs?.length) nl('\n页码：' + t.page_refs.map(r => `第${r.page}页`).join('、'));
+      if (t.page_refs?.length) nl('\n' + t.page_refs.map(r => pageLabel(r.page)).join('、'));
       nl('');
     });
   }
@@ -1844,8 +1857,8 @@ function exportNotes() {
     nl('## 阅读建议'); nl('');
     d.read_this_if.forEach(p => {
       const locs = p.locations
-        ? p.locations.map(l => `第${l.page}页${l.lines ? '·' + l.lines + '行' : ''}`).join('、')
-        : (p.pages || []).map(pg => `第${pg}页`).join('、');
+        ? p.locations.map(l => pageLabel(l.page) + (l.lines ? ' · ' + linesLabel(l.lines) : '')).join('、')
+        : (p.pages || []).map(pg => pageLabel(pg)).join('、');
       nl(`- **${p.goal}**：${locs}`);
     });
     nl('');
@@ -1858,7 +1871,7 @@ function exportNotes() {
       nl(`> ${a.text.slice(0, 80)}${a.text.length > 80 ? '…' : ''}`);
       nl('');
       nl(a.note);
-      nl(`\n*第 ${a.page} 页 · ${a.created_at}*`);
+      nl(`\n*${pageLabel(a.page)} · ${a.created_at}*`);
       nl('');
     });
   }
@@ -2441,7 +2454,7 @@ function renderStructure(data) {
 // ── New guide renderer ────────────────────────────────────────────────────────
 function evidenceBadge(item) {
   const status = item?.evidence_status || 'not_checked';
-  const suffix = item?.evidence_page ? ` · 第 ${item.evidence_page} 页` : '';
+  const suffix = item?.evidence_page ? ` · ${pageLabel(item.evidence_page)}` : '';
   const label = status === 'verified'
     ? `${lab('verified')}${suffix}`
     : status === 'unverified'
@@ -2567,10 +2580,11 @@ function renderOverviewDashboard(data) {
     ? ov.conceptMap.map(c => `<span class="concept-chip">${esc(_shortText(c, 26))}</span>`).join('')
     : `<span class="concept-chip">${lab('noConcepts')}</span>`;
 
+  const sep = _uiLang === 'ja' || _uiLang === 'zh' || _uiLang === 'zh-TW' || _uiLang === 'ko' ? '、' : ', ';
   const readMapHTML = (data.read_this_if || []).slice(0, 3).map(p => {
     const locs = p.locations
-      ? p.locations.map(l => `第${l.page}页`).join('、')
-      : (p.pages || []).map(pg => `第${pg}页`).join('、');
+      ? p.locations.map(l => pageLabel(l.page)).join(sep)
+      : (p.pages || []).map(pg => pageLabel(pg)).join(sep);
     return `<div class="read-map-item"><span class="read-map-goal">${esc(p.goal || '')}</span><span>${esc(locs || '')}</span></div>`;
   }).join('');
 
@@ -2674,7 +2688,7 @@ function renderGuide(data) {
     html += `<div class="themes-section">`;
     data.themes.forEach(theme => {
       const refsHTML = (theme.page_refs || []).map(r =>
-        `<button class="page-ref-btn${evidenceClass(r)}" data-page="${r.page}" data-hint="${esc(r.text_hint || '')}" title="${esc(r.evidence_note || r.text_hint || '')}">第 ${r.page} 页${r.label ? ' · ' + esc(r.label) : ''}</button>`
+        `<button class="page-ref-btn${evidenceClass(r)}" data-page="${r.page}" data-hint="${esc(r.text_hint || '')}" title="${esc(r.evidence_note || r.text_hint || '')}">${pageLabel(r.page)}${r.label ? ' · ' + esc(r.label) : ''}</button>`
       ).join('');
 
       const citesHTML = (theme.citations || []).map(raw => {
@@ -2684,8 +2698,8 @@ function renderGuide(data) {
           <span class="citation-text">${esc(q)}</span>
           ${evidenceBadge(c)}
           <div class="citation-actions">
-            <button class="cite-btn cite-copy" data-q="${esc(q)}">复制</button>
-            <button class="cite-btn cite-find" data-q="${esc(q)}">PDF 定位</button>
+            <button class="cite-btn cite-copy" data-q="${esc(q)}">${esc(t('copy'))}</button>
+            <button class="cite-btn cite-find" data-q="${esc(q)}">${esc(t('pdf_locate'))}</button>
           </div>
         </div>`;
       }).join('');
@@ -2728,8 +2742,8 @@ function renderGuide(data) {
           <span class="citation-text">${esc(q)}</span>
           ${evidenceBadge(ci)}
           <div class="citation-actions">
-            <button class="cite-btn cite-copy" data-q="${esc(q)}">复制</button>
-            <button class="cite-btn cite-find" data-q="${esc(q)}">PDF 定位</button>
+            <button class="cite-btn cite-copy" data-q="${esc(q)}">${esc(t('copy'))}</button>
+            <button class="cite-btn cite-find" data-q="${esc(q)}">${esc(t('pdf_locate'))}</button>
           </div>
         </div>`;
       }).join('')}
@@ -2746,11 +2760,11 @@ function renderGuide(data) {
       let locsHTML = '';
       if (path.locations && path.locations.length) {
         locsHTML = path.locations.map(loc =>
-          `<span class="read-path-page page-ref-btn" data-page="${loc.page}" data-hint="${esc(loc.hint || '')}">第 ${loc.page} 页${loc.lines ? ' · ' + loc.lines + ' 行' : ''}</span>`
+          `<span class="read-path-page page-ref-btn" data-page="${loc.page}" data-hint="${esc(loc.hint || '')}">${pageLabel(loc.page)}${loc.lines ? ' · ' + linesLabel(loc.lines) : ''}</span>`
         ).join('');
       } else if (path.pages && path.pages.length) {
         locsHTML = path.pages.map(p =>
-          `<span class="read-path-page page-ref-btn" data-page="${p}">第 ${p} 页</span>`
+          `<span class="read-path-page page-ref-btn" data-page="${p}">${pageLabel(p)}</span>`
         ).join('');
       }
       html += `<div class="read-path-item">
@@ -2770,7 +2784,7 @@ function renderGuide(data) {
         <div class="vocab-original">${esc(term.original)}</div>
         <div class="vocab-translation">${esc(term.translation)}</div>
         <div class="vocab-def">${esc(term.definition)}</div>
-        ${term.page ? `<button class="page-ref-btn" data-page="${term.page}">第 ${term.page} 页</button>` : ''}
+        ${term.page ? `<button class="page-ref-btn" data-page="${term.page}">${pageLabel(term.page)}</button>` : ''}
       </div>`;
     });
     html += `</div>`;
@@ -2950,7 +2964,7 @@ function renderLegacyTree(data) {
              data-action="toggle-children" data-id="${sec.id}">${hasSubs ? '▶' : ''}</div>
         <div class="sec-text">
           <span class="sec-title">${esc(sec.title)}</span>
-          <span class="sec-page">第 ${sec.page} 页</span>
+          <span class="sec-page">${pageLabel(sec.page)}</span>
         </div>
       </div>
       ${summaryHTML}${childrenHTML}
