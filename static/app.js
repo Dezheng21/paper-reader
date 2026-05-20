@@ -1561,6 +1561,11 @@ function init() {
 
     const detailsToggle = e.target.closest('.details-toggle');
     if (detailsToggle) { toggleDetailsLayer(); return; }
+
+    // Theme expand/collapse — guard against clicks on the editable heading
+    if (e.target.closest('[data-stop-propagation]')) return;
+    const themeHead = e.target.closest('[data-theme-toggle]');
+    if (themeHead) { toggleTheme(themeHead.dataset.themeToggle); return; }
   });
 
   // Library
@@ -2599,10 +2604,10 @@ function renderGuide(data) {
       }).join('');
 
       html += `<div class="theme-item" data-id="${theme.id}">
-        <div class="theme-head" onclick="toggleTheme('${theme.id}')">
+        <div class="theme-head" data-theme-toggle="${theme.id}">
           <div class="theme-toggle" id="ttog_${theme.id}">▶</div>
           <div class="theme-text">
-            <span class="theme-heading" contenteditable="true" data-path="theme.${theme.id}.heading" onclick="event.stopPropagation()">${esc(theme.heading)}</span>
+            <span class="theme-heading" contenteditable="true" data-path="theme.${theme.id}.heading" data-stop-propagation="1">${esc(theme.heading)}</span>
           </div>
         </div>
         <div class="theme-body" id="tbody_${theme.id}">
