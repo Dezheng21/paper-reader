@@ -1,0 +1,18 @@
+# Force LF line endings for shell scripts so they run on Mac/Linux
+# (Windows would otherwise add CRLF and break #!/usr/bin/env bash)
+*.sh        text eol=lf
+*.command   text eol=lf
+mac/*       text eol=lf
+
+# Keep Windows scripts as CRLF
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Binary files
+*.ico       binary
+*.icns      binary
+*.png       binary
+*.dmg       binary
+*.exe       binary
+*.pdf       binary

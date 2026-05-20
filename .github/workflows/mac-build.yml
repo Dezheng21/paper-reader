@@ -1,0 +1,64 @@
+name: Build macOS .app + .dmg
+
+on:
+  # Manual trigger via the "Run workflow" button on GitHub
+  workflow_dispatch:
+  # Auto-trigger on push if Mac files change
+  push:
+    branches: [main]
+    paths:
+      - 'mac/**'
+      - 'main.py'
+      - 'ai_analyzer.py'
+      - 'pdf_parser.py'
+      - 'battle.py'
+      - 'requirements.txt'
+      - 'static/**'
+      - '.github/workflows/mac-build.yml'
+
+jobs:
+  build:
+    name: Build & smoke test on macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14    # Apple Silicon (M-series)
+            arch: arm64
+          - runner: macos-13    # Intel
+            arch: x86_64
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x mac/*.sh
+
+      - name: Build .app bundle
+        run: bash mac/build_app.sh
+
+      - name: Smoke test (.app launches, server responds)
+        run: bash mac/smoke_test.sh
+
+      - name: Build .dmg
+        run: bash mac/build_dmg.sh
+
+      - name: Show build output
+        run: ls -lh dist/
+
+      - name: Upload .dmg artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PaperKnowKnow-${{ matrix.arch }}-dmg
+          path: dist/*.dmg
+          retention-days: 30
+
+      - name: Upload .app artifact (zipped)
+        uses: actions/upload-artifact@v4
+        with:
+          name: PaperKnowKnow-${{ matrix.arch }}-app
+          path: dist/PaperKnowKnow.app
+          retention-days: 7
