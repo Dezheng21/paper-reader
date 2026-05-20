@@ -52,6 +52,11 @@ const LANG_CODE = {
   'Japanese': 'ja', 'Korean': 'ko', 'French': 'fr',
   'German': 'de', 'Spanish': 'es', 'Vietnamese': 'vi',
 };
+const LANG_DISPLAY = {
+  'Chinese': '中文（简体）', 'English': 'English', 'Chinese Traditional': '中文（繁體）',
+  'Japanese': '日本語', 'Korean': '한국어', 'French': 'Français',
+  'German': 'Deutsch', 'Spanish': 'Español', 'Vietnamese': 'Tiếng Việt',
+};
 let _uiLang = 'zh';
 
 const TRANSLATIONS = {
@@ -95,6 +100,8 @@ const TRANSLATIONS = {
     label_output_lang: '输出语言', label_model: '模型',
     label_model_opt: '（留空使用默认）', model_ph: '如 claude-sonnet-4-6、gpt-4o…',
     tab_new_title: '新标签页', learnlang_tooltip: '开启后，AI 会在分析结果中额外提取 5-8 个核心术语，附上原文词汇、译文和释义。适合在阅读外文文献时同步学习专业词汇。会额外消耗少量 token。',
+    expand_full: '展开完整分析', collapse_full: '收起完整分析',
+    mismatch: '你选择的输出语言（{out}）和界面语言（{ui}）不同，确定要继续吗？',
   },
   en: {
     title: 'PaperKnowKnow', open_paper: 'Open Paper', analyze_btn: 'Analyze',
@@ -136,6 +143,8 @@ const TRANSLATIONS = {
     label_output_lang: 'Output Language', label_model: 'Model',
     label_model_opt: '(leave blank for default)', model_ph: 'e.g. claude-sonnet-4-6, gpt-4o…',
     tab_new_title: 'New tab', learnlang_tooltip: 'When enabled, AI will extract 5–8 key terms with original vocabulary, translation, and definitions. Useful for reading foreign-language papers. Uses a small amount of extra tokens.',
+    expand_full: 'Show full analysis', collapse_full: 'Hide full analysis',
+    mismatch: 'Output language ({out}) differs from UI language ({ui}). Continue?',
   },
   'zh-TW': {
     title: 'PaperKnowKnow', open_paper: '開啟論文', analyze_btn: '論文分析',
@@ -177,6 +186,8 @@ const TRANSLATIONS = {
     label_output_lang: '輸出語言', label_model: '模型',
     label_model_opt: '（留空使用預設）', model_ph: '如 claude-sonnet-4-6、gpt-4o…',
     tab_new_title: '新標籤頁', learnlang_tooltip: '開啟後，AI 會在分析結果中額外提取 5-8 個核心術語，附上原文詞彙、譯文和釋義。適合閱讀外文文獻時同步學習專業詞彙。會額外消耗少量 token。',
+    expand_full: '展開完整分析', collapse_full: '收起完整分析',
+    mismatch: '你選擇的輸出語言（{out}）和介面語言（{ui}）不同，確定要繼續嗎？',
   },
   ja: {
     title: 'PaperKnowKnow', open_paper: '論文を開く', analyze_btn: '論文分析',
@@ -218,6 +229,8 @@ const TRANSLATIONS = {
     label_output_lang: '出力言語', label_model: 'モデル',
     label_model_opt: '（空白でデフォルト）', model_ph: '例: claude-sonnet-4-6、gpt-4o…',
     tab_new_title: '新しいタブ', learnlang_tooltip: '有効にすると、AIが解説に5〜8つのキー用語を追加します（原文・訳・解説付き）。外国語論文を読む際の語彙学習に役立ちます。少量の追加トークンが必要です。',
+    expand_full: '完全な分析を表示', collapse_full: '完全な分析を非表示',
+    mismatch: '出力言語（{out}）が画面の言語（{ui}）と異なります。続行しますか？',
   },
   ko: {
     title: 'PaperKnowKnow', open_paper: '논문 열기', analyze_btn: '논문 분석',
@@ -259,6 +272,8 @@ const TRANSLATIONS = {
     label_output_lang: '출력 언어', label_model: '모델',
     label_model_opt: '（비워두면 기본값）', model_ph: '예: claude-sonnet-4-6, gpt-4o…',
     tab_new_title: '새 탭', learnlang_tooltip: '활성화하면 AI가 5~8개의 핵심 용어를 원문, 번역, 설명과 함께 추출합니다. 외국어 논문 읽기에 유용합니다. 소량의 추가 토큰이 필요합니다.',
+    expand_full: '전체 분석 펼치기', collapse_full: '전체 분석 접기',
+    mismatch: '선택한 출력 언어({out})와 화면 언어({ui})가 다릅니다. 계속할까요?',
   },
   fr: {
     title: 'PaperKnowKnow', open_paper: 'Ouvrir', analyze_btn: 'Analyser',
@@ -300,6 +315,8 @@ const TRANSLATIONS = {
     label_output_lang: 'Langue de sortie', label_model: 'Modèle',
     label_model_opt: '(laisser vide pour défaut)', model_ph: 'ex. claude-sonnet-4-6, gpt-4o…',
     tab_new_title: 'Nouvel onglet', learnlang_tooltip: "Activé, l'IA extrait 5 à 8 termes clés avec vocabulaire original, traduction et définition. Utile pour les documents en langue étrangère. Consomme quelques tokens supplémentaires.",
+    expand_full: 'Afficher l’analyse complète', collapse_full: 'Masquer l’analyse complète',
+    mismatch: 'La langue de sortie ({out}) diffère de la langue d’interface ({ui}). Continuer ?',
   },
   de: {
     title: 'PaperKnowKnow', open_paper: 'Öffnen', analyze_btn: 'Analysieren',
@@ -341,6 +358,8 @@ const TRANSLATIONS = {
     label_output_lang: 'Ausgabesprache', label_model: 'Modell',
     label_model_opt: '(leer lassen für Standard)', model_ph: 'z.B. claude-sonnet-4-6, gpt-4o…',
     tab_new_title: 'Neuer Tab', learnlang_tooltip: 'Wenn aktiviert, extrahiert die KI 5–8 Schlüsselbegriffe mit Originalvokabular, Übersetzung und Definition. Nützlich beim Lesen fremdsprachiger Dokumente. Verbraucht geringe zusätzliche Token.',
+    expand_full: 'Vollständige Analyse anzeigen', collapse_full: 'Vollständige Analyse ausblenden',
+    mismatch: 'Ausgabesprache ({out}) unterscheidet sich von der Oberfläche ({ui}). Fortfahren?',
   },
   es: {
     title: 'PaperKnowKnow', open_paper: 'Abrir', analyze_btn: 'Analizar',
@@ -382,6 +401,8 @@ const TRANSLATIONS = {
     label_output_lang: 'Idioma de salida', label_model: 'Modelo',
     label_model_opt: '(dejar vacío para predeterminado)', model_ph: 'ej. claude-sonnet-4-6, gpt-4o…',
     tab_new_title: 'Nueva pestaña', learnlang_tooltip: 'Cuando está activado, la IA extrae 5-8 términos clave con vocabulario original, traducción y definición. Útil para leer documentos en idiomas extranjeros. Consume pocos tokens adicionales.',
+    expand_full: 'Mostrar análisis completo', collapse_full: 'Ocultar análisis completo',
+    mismatch: 'El idioma de salida ({out}) difiere del idioma de interfaz ({ui}). ¿Continuar?',
   },
   vi: {
     title: 'PaperKnowKnow', open_paper: 'Mở bài báo', analyze_btn: 'Phân tích',
@@ -423,6 +444,8 @@ const TRANSLATIONS = {
     label_output_lang: 'Ngôn ngữ đầu ra', label_model: 'Mô hình',
     label_model_opt: '(để trống để dùng mặc định)', model_ph: 'vd. claude-sonnet-4-6, gpt-4o…',
     tab_new_title: 'Tab mới', learnlang_tooltip: 'Khi bật, AI sẽ trích xuất 5-8 thuật ngữ quan trọng kèm từ gốc, bản dịch và định nghĩa. Hữu ích khi đọc tài liệu ngoại ngữ. Tiêu tốn thêm một ít token.',
+    expand_full: 'Hiện phân tích đầy đủ', collapse_full: 'Ẩn phân tích đầy đủ',
+    mismatch: 'Ngôn ngữ đầu ra ({out}) khác với giao diện ({ui}). Tiếp tục?',
   },
 };
 
@@ -665,7 +688,20 @@ function setUiLang(langVal) {
   // Sidebar controls
   const scl = document.querySelector('.sidebar-controls-label');
   if (scl) scl.textContent = t('sidebar_label');
+  $('exportBtn').textContent = t('export_btn');
   $('exportBtn').title = t('export_btn').replace('↓ ', '');
+
+  // Output-language label in analysis modal
+  const ill = $('intentLangLabel');
+  if (ill) ill.textContent = t('label_output_lang');
+
+  // If a cognition layer is rendered, also refresh the toggle text
+  const dtx = $('detailsToggleText');
+  if (dtx) {
+    const layer = $('detailsLayer');
+    const isCollapsed = layer ? layer.classList.contains('collapsed') : true;
+    dtx.textContent = isCollapsed ? t('expand_full') : t('collapse_full');
+  }
 
   // Analyze status default (only update if not currently active)
   if (analyzeStatus.style.display === 'none') {
@@ -1497,6 +1533,20 @@ function init() {
   });
   intentOpts.addEventListener('mouseleave', () => showIntentDesc(currentIntent));
   intentConfirm.addEventListener('click', () => {
+    // Mismatch warning: user picked output lang different from UI lang
+    const outLang = $('intentLangSel').value;
+    const uiLang  = topbarLangSel.value;
+    if (outLang !== uiLang) {
+      const msg = (t('mismatch') || '')
+        .replace('{out}', LANG_DISPLAY[outLang] || outLang)
+        .replace('{ui}',  LANG_DISPLAY[uiLang]  || uiLang);
+      if (!confirm(msg)) return;
+    }
+    // Persist selected output lang so it sticks for next time
+    const s = loadSettings();
+    s.lang = outLang;
+    saveSettings(s);
+
     currentQuestion = intentQuestion.value.trim();
     depth = INTENT_DEPTH[currentIntent] || 'brief';
     intentOverlay.style.display = 'none';
@@ -2291,6 +2341,11 @@ async function handleAnalyze() {
   intentQuestion.style.display = 'none';
   intentQuestion.placeholder = t('intent_question_ph');
   intentDesc.innerHTML = `<div class="tip-empty">${t('intent_tip')}</div>`;
+
+  // Sync the output-lang select with last saved choice (defaults to UI lang)
+  const ils = $('intentLangSel');
+  if (ils) ils.value = loadSettings().lang || topbarLangSel.value || 'Chinese';
+
   intentOverlay.style.display = 'flex';
 }
 
@@ -2312,7 +2367,16 @@ async function doAnalyze() {
   };
   const modelName = s.model || DEFAULT_MODELS[provider] || provider;
   const analyzeTime = new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-  const INTENT_LABELS = { quick: '快速看懂', deep: '精读导读', question: '带问题读', deep_notes: '文献笔记', critical: '审稿视角', research: '选题推进' };
+  // Use the active UI language's intent titles so the meta bar localizes
+  const _intents = (ui().intents) || {};
+  const INTENT_LABELS = {
+    quick:      _intents.quick?.title      || 'Quick Read',
+    deep:       _intents.deep?.title       || 'Close Reading Guide',
+    question:   _intents.question?.title   || 'Question-led Reading',
+    deep_notes: _intents.deep_notes?.title || 'Literature Notes',
+    critical:   _intents.critical?.title   || 'Review Lens',
+    research:   _intents.research?.title   || 'Research Direction',
+  };
 
   showAnalyzeStatus(t('analyzing'));
   analyzeBtn.disabled = true; pdfToMdBtn.disabled = true;
@@ -2570,7 +2634,7 @@ function renderGuide(data) {
 
   // Toggle: collapse/expand the details below
   html += `<div class="details-toggle">
-    <span class="details-toggle-text" id="detailsToggleText">展开完整分析</span>
+    <span class="details-toggle-text" id="detailsToggleText">${esc(t('expand_full'))}</span>
     <span class="details-toggle-icon" id="detailsToggleIcon">▾</span>
   </div>`;
 
@@ -2847,7 +2911,7 @@ function toggleDetailsLayer() {
   const icon  = document.getElementById('detailsToggleIcon');
   if (!layer) return;
   const isCollapsed = layer.classList.toggle('collapsed');
-  if (text) text.textContent = isCollapsed ? '展开完整分析' : '收起完整分析';
+  if (text) text.textContent = isCollapsed ? t('expand_full') : t('collapse_full');
   if (icon) icon.textContent = isCollapsed ? '▾' : '▴';
 }
 

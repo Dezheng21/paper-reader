@@ -845,7 +845,21 @@ body { display: flex; flex-direction: column; background: var(--bg); }
         <input class="intent-question" id="intentQuestion" placeholder="我想了解……" style="display:none">
       </div>
     </div>
-    <div class="modal-foot">
+    <div class="modal-foot" style="display:flex;align-items:center;gap:12px;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px">
+        <label for="intentLangSel" id="intentLangLabel" style="color:var(--t2)">输出语言</label>
+        <select id="intentLangSel" style="padding:4px 8px;font-size:13px;border:1px solid var(--line);border-radius:6px;background:#fff">
+          <option value="Chinese">中文（简体）</option>
+          <option value="English">English</option>
+          <option value="Chinese Traditional">中文（繁體）</option>
+          <option value="Japanese">日本語</option>
+          <option value="Korean">한국어</option>
+          <option value="French">Français</option>
+          <option value="German">Deutsch</option>
+          <option value="Spanish">Español</option>
+          <option value="Vietnamese">Tiếng Việt</option>
+        </select>
+      </div>
       <button class="btn btn-analyze" id="intentConfirm">开始论文分析</button>
     </div>
   </div>

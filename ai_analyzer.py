@@ -130,7 +130,12 @@ Your job is NOT to summarize each section in order. Your job is to help the read
 
 Write with intellectual personality. If an argument is clever, say so. If a finding is counterintuitive, highlight it. If the paper makes a bold claim, engage with it. Avoid bureaucratic language.
 
-CRITICAL: Write ALL text fields in {lang}. Translate everything into {lang} regardless of the paper's original language.
+CRITICAL — OUTPUT LANGUAGE IS {lang}:
+  • EVERY text field you write MUST be in {lang}. No exceptions.
+  • This applies even if the paper itself is in a different language — you are translating into {lang}.
+  • The ONLY exception is the "citations" / "key_citations" arrays and "text_hint" fields, which MUST keep the paper's ORIGINAL language for searchability.
+  • If a section title or concept exists only in the source language, write the {lang} translation and add the original in parentheses.
+  • Do NOT default to the paper's language even if it "feels natural" — strictly follow {lang}.
 
 READER INTENT: {intent_instr}
 
@@ -148,11 +153,11 @@ Return ONLY a valid JSON object (no markdown fences) with this exact structure:
   "year": "year or empty string",
   "one_line_thesis": "THE single most important claim of the paper, in ONE punchy sentence (target: under 30 chars/words). What the reader should remember if they only remember one thing. Sharp, declarative, no hedging. Example: '居住地安全感比国族自豪感更能预测移民态度'",
   "three_pillars": [
-    {{"label": "为什么重要", "text": "Why this paper matters — the gap or tension it addresses. 1 short sentence."}},
-    {{"label": "怎么知道的", "text": "The core method or evidence path. 1 short sentence."}},
-    {{"label": "所以呢", "text": "The implication, application, or boundary. 1 short sentence."}}
+    {{"label": "label in {lang} meaning 'Why it matters'", "text": "Why this paper matters — the gap or tension it addresses. 1 short sentence in {lang}."}},
+    {{"label": "label in {lang} meaning 'How we know'",    "text": "The core method or evidence path. 1 short sentence in {lang}."}},
+    {{"label": "label in {lang} meaning 'So what'",         "text": "The implication, application, or boundary. 1 short sentence in {lang}."}}
   ],
-  "reading_shortcut": "One concrete reading hint, e.g. '只读 1 分钟 → 看 P3 第二段「核心发现」'. Be specific about page and what to find there.",
+  "reading_shortcut": "One concrete reading hint in {lang}, e.g. (in Chinese) '只读 1 分钟 → 看 P3 第二段「核心发现」'. Be specific about page and what to find there.",
   "core_question": "The single central question this paper addresses. One sentence.",
   "key_insight": "The most important or surprising finding. 1-2 sentences with personality.",
   "guide_intro": "Opening paragraph (3-5 sentences). Avoid starting with 'This paper...'",
@@ -217,7 +222,12 @@ Your job is NOT to summarize each section in order. Your job is to help the read
 
 Write with intellectual personality. If an argument is clever, say so. If a finding is counterintuitive, highlight it. If the paper makes a bold claim, engage with it. Avoid bureaucratic language.
 
-CRITICAL: Write ALL text fields in {lang}. Translate everything into {lang} regardless of the paper's original language.
+CRITICAL — OUTPUT LANGUAGE IS {lang}:
+  • EVERY text field you write MUST be in {lang}. No exceptions.
+  • This applies even if the paper itself is in a different language — you are translating into {lang}.
+  • The ONLY exception is the "citations" / "key_citations" arrays and "text_hint" fields, which MUST keep the paper's ORIGINAL language for searchability.
+  • If a section title or concept exists only in the source language, write the {lang} translation and add the original in parentheses.
+  • Do NOT default to the paper's language even if it "feels natural" — strictly follow {lang}.
 
 READER INTENT: {intent_instr}
 
@@ -235,11 +245,11 @@ Return ONLY a valid JSON object (no markdown fences) with this exact structure:
   "year": "year or empty string",
   "one_line_thesis": "THE single most important claim of the paper, in ONE punchy sentence (target: under 30 chars/words). What the reader should remember if they only remember one thing. Sharp, declarative, no hedging. Example: '居住地安全感比国族自豪感更能预测移民态度'",
   "three_pillars": [
-    {{"label": "为什么重要", "text": "Why this paper matters — the gap or tension it addresses. 1 short sentence."}},
-    {{"label": "怎么知道的", "text": "The core method or evidence path. 1 short sentence."}},
-    {{"label": "所以呢", "text": "The implication, application, or boundary. 1 short sentence."}}
+    {{"label": "label in {lang} meaning 'Why it matters'", "text": "Why this paper matters — the gap or tension it addresses. 1 short sentence in {lang}."}},
+    {{"label": "label in {lang} meaning 'How we know'",    "text": "The core method or evidence path. 1 short sentence in {lang}."}},
+    {{"label": "label in {lang} meaning 'So what'",         "text": "The implication, application, or boundary. 1 short sentence in {lang}."}}
   ],
-  "reading_shortcut": "One concrete reading hint, e.g. '只读 1 分钟 → 看 P3 第二段「核心发现」'. Be specific about page and what to find there.",
+  "reading_shortcut": "One concrete reading hint in {lang}, e.g. (in Chinese) '只读 1 分钟 → 看 P3 第二段「核心发现」'. Be specific about page and what to find there.",
   "core_question": "The single central question this paper addresses. One sentence.",
   "key_insight": "The most important or surprising finding. 1-2 sentences with personality.",
   "guide_intro": "Opening paragraph (3-5 sentences). Avoid starting with 'This paper...'",
