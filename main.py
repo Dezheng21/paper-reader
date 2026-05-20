@@ -829,6 +829,15 @@ async def library_update_analysis(lib_id: str, req: AnalysisUpdateReq):
         raise HTTPException(404, "Not found")
     data = json.loads(p.read_text(encoding="utf-8"))
     data["analysis"] = req.analysis
+    # Refresh top-level meta from the new analysis so the library list
+    # reflects any re-analysis (e.g. different intent, updated title).
+    a = req.analysis or {}
+    if a.get("title"):   data["title"]   = a["title"]
+    if a.get("authors"): data["authors"] = a["authors"]
+    if a.get("year"):    data["year"]    = a["year"]
+    method = (a.get("_meta") or {}).get("intent", "")
+    if method: data["analysis_method"] = method
+    data["saved_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
     p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     return {"ok": True}
 

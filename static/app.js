@@ -1426,6 +1426,22 @@ async function autoSaveToLibrary(analysis) {
   }
 }
 
+// Re-analysis of a paper already in the library: overwrite the analysis JSON
+// + refresh meta fields (title/authors/method) in case they changed.
+async function updateLibraryAnalysis(analysis) {
+  if (!currentLibId) return;
+  try {
+    await fetch(`/library/${currentLibId}/analysis`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ analysis }),
+    });
+    toast(t('toast_lib_saved'), 'success');
+  } catch {
+    // silent — best-effort
+  }
+}
+
 async function loadDocumentProfile(id, source = 'upload') {
   if (!id) return;
   try {
@@ -2431,7 +2447,14 @@ async function doAnalyze() {
     };
     { const tab = getActiveTab(); if (tab) tab.structure = structure; }
     renderStructure(structure);
-    if (fileId) autoSaveToLibrary(structure);
+    // Persist the analysis:
+    //   - currentLibId set → already in library (re-analysis), PATCH overwrite
+    //   - fileId set       → new upload, POST a fresh library entry
+    if (currentLibId) {
+      updateLibraryAnalysis(structure);
+    } else if (fileId) {
+      autoSaveToLibrary(structure);
+    }
     battleSetContext(structure);
   } catch (e) {
     toast(t('toast_analyze_failed') + e.message);
