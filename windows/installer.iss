@@ -20,6 +20,8 @@ OutputBaseFilename=PaperKnowKnow-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=icon.ico
+UninstallDisplayIcon={app}\icon.ico
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -45,13 +47,16 @@ Source: "..\static\*"; DestDir: "{app}\static"; Flags: ignoreversion recursesubd
 ; Launcher script
 Source: "..\dist\launch.bat"; DestDir: "{app}"; Flags: ignoreversion
 
+; App icon (bundled so shortcuts can reference it)
+Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+
 ; get-pip.py bootstrap (embeddable Python doesn't include ensurepip)
 Source: "..\dist\get-pip.py"; DestDir: "{app}\python"; Flags: ignoreversion deleteafterinstall
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\launch.bat"; IconFilename: "{app}\python\python.exe"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\launch.bat"; IconFilename: "{app}\icon.ico"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\launch.bat"; IconFilename: "{app}\python\python.exe"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\launch.bat"; IconFilename: "{app}\icon.ico"; Tasks: desktopicon
 
 [Run]
 ; Bootstrap pip via get-pip.py (embeddable Python lacks ensurepip)

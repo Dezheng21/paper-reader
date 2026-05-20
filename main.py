@@ -165,6 +165,13 @@ async def serve_js():
     content = (STATIC_DIR / "app.js").read_bytes()
     return Response(content, media_type="application/javascript", headers=NO_CACHE)
 
+@app.get("/favicon.ico")
+async def serve_favicon():
+    fav = STATIC_DIR / "favicon.ico"
+    if fav.exists():
+        return FileResponse(str(fav), media_type="image/x-icon")
+    return Response(status_code=404)
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # ── PDF upload / serve ────────────────────────────────────────────────────────
