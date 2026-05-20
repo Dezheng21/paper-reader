@@ -2481,10 +2481,6 @@ function renderOverviewDashboard(data) {
 
   return `<div class="overview-dashboard">
     <div class="ov-grid">
-      <div class="ov-card ov-card-wide">
-        <div class="ov-label">${lab('currentMethod')}</div>
-        <div class="ov-text"><b>${esc(intent)}</b></div>
-      </div>
       <div class="ov-card">
         <div class="ov-label">${lab('coreQuestion')}</div>
         <div class="ov-text">${esc(_shortText(data.core_question, 120))}</div>
@@ -2523,19 +2519,7 @@ function renderGuide(data) {
     <div class="guide-paper-meta">${esc(data.authors || '')}${data.year ? ' · ' + esc(data.year) : ''}</div>
   </div>`;
 
-  // ── Cognition Layer (认知层) — visual anchor at top ────────────────
-  html += renderCognitionLayer(data);
-
-  // Toggle: collapse/expand the details below
-  html += `<div class="details-toggle" onclick="toggleDetailsLayer()">
-    <span class="details-toggle-text" id="detailsToggleText">展开完整分析</span>
-    <span class="details-toggle-icon" id="detailsToggleIcon">▾</span>
-  </div>`;
-
-  html += `<div class="details-layer collapsed" id="detailsLayer">`;
-  html += renderOverviewDashboard(data);
-
-  // Analysis metadata footnote
+  // Analysis metadata bar — moved to top (between author & body), always visible
   if (data._meta) {
     const m = data._meta;
     const tokStr = m.tokens ? `${m.tokens.toLocaleString()} tokens` : '';
@@ -2549,6 +2533,18 @@ function renderGuide(data) {
       ${tokStr ? `<span class="sep">·</span><span title="输入 ${m.input?.toLocaleString() || 0} + 输出 ${m.output?.toLocaleString() || 0}">${tokStr}${detailStr}</span>` : ''}
     </div>`;
   }
+
+  // ── Cognition Layer (认知层) — visual anchor ──────────────────────
+  html += renderCognitionLayer(data);
+
+  // Toggle: collapse/expand the details below
+  html += `<div class="details-toggle" onclick="toggleDetailsLayer()">
+    <span class="details-toggle-text" id="detailsToggleText">展开完整分析</span>
+    <span class="details-toggle-icon" id="detailsToggleIcon">▾</span>
+  </div>`;
+
+  html += `<div class="details-layer collapsed" id="detailsLayer">`;
+  html += renderOverviewDashboard(data);
 
   if (data._evidence && data._evidence.checked) {
     const ev = data._evidence;
