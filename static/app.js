@@ -2991,10 +2991,33 @@ function toggleBattlePanel() {
     return;
   }
   const panel = _bp('battlePanel');
+  const handle = document.getElementById('bpHandle');
   if (!panel) return;
   _bpOpen = !_bpOpen;
   panel.classList.toggle('open', _bpOpen);
+  // ✕ closes fully — also hide the side handle so user re-opens via topbar
+  if (handle) handle.style.display = 'none';
   if (_bpOpen && !_bpSessionId) _bpShowIdle();
+}
+
+// ◀ — collapse to side handle; chat state preserved, click handle to expand
+function collapseBattlePanel() {
+  const panel = _bp('battlePanel');
+  const handle = document.getElementById('bpHandle');
+  if (!panel) return;
+  panel.classList.remove('open');
+  _bpOpen = false;
+  if (handle) handle.style.display = 'flex';
+}
+
+// 🦕 handle click — restore the panel
+function expandBattlePanel() {
+  const panel = _bp('battlePanel');
+  const handle = document.getElementById('bpHandle');
+  if (!panel) return;
+  panel.classList.add('open');
+  _bpOpen = true;
+  if (handle) handle.style.display = 'none';
 }
 
 function selectBattleMode(mode) {
@@ -3177,7 +3200,9 @@ window.loadFromLibrary   = loadFromLibrary;
 window.deleteLibraryItem = deleteLibraryItem;
 window.showTagInput      = showTagInput;
 window.deleteAnnotation  = deleteAnnotation;
-window.toggleBattlePanel = toggleBattlePanel;
+window.toggleBattlePanel  = toggleBattlePanel;
+window.collapseBattlePanel = collapseBattlePanel;
+window.expandBattlePanel   = expandBattlePanel;
 window.selectBattleMode  = selectBattleMode;
 window.battleStart       = battleStart;
 window.battleSend        = battleSend;

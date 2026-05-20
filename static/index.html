@@ -946,7 +946,8 @@ body { display: flex; flex-direction: column; background: var(--bg); }
     <div class="bp-actions">
       <button class="bp-icon-btn" id="bpHelpBtn" onclick="battleAskHelp()" title="KnowKnow!!!">🛡</button>
       <button class="bp-icon-btn" id="bpEndBtn"  onclick="battleEnd()"     title="完成">✓</button>
-      <button class="bp-icon-btn"                onclick="toggleBattlePanel()"               title="关闭">✕</button>
+      <button class="bp-icon-btn"                onclick="collapseBattlePanel()"              title="收起">◀</button>
+      <button class="bp-icon-btn"                onclick="toggleBattlePanel()"                title="关闭">✕</button>
     </div>
   </div>
 
@@ -1004,6 +1005,9 @@ body { display: flex; flex-direction: column; background: var(--bg); }
   </div>
 </div>
 
+<!-- Collapsed handle (drawer pull tab on right edge) -->
+<button id="bpHandle" class="bp-handle" style="display:none" onclick="expandBattlePanel()" title="展开 KnowKnow 对话">🦕</button>
+
 <style>
 /* ── KnowKnow 面板 ── */
 .battle-panel {
@@ -1021,6 +1025,37 @@ body { display: flex; flex-direction: column; background: var(--bg); }
   transition: transform .28s cubic-bezier(.4,0,.2,1);
 }
 .battle-panel.open { transform: translateX(0); }
+
+/* Collapsed handle — small drawer-pull tab on right edge */
+.bp-handle {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 68px;
+  background: #fff;
+  border: 1px solid rgba(55,53,47,.14);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  box-shadow: -3px 3px 14px rgba(0,0,0,.10);
+  cursor: pointer;
+  z-index: 49;
+  font-size: 20px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  transition: transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s, background .15s;
+  display: none;
+}
+.bp-handle:hover {
+  background: #FAF9F6;
+  transform: translateY(-50%) translateX(-3px);
+  box-shadow: -5px 4px 18px rgba(0,0,0,.14);
+}
+.bp-handle:active {
+  transform: translateY(-50%) translateX(-1px);
+}
 
 .bp-head {
   height: 48px;
