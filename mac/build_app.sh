@@ -23,10 +23,11 @@ else
     exit 1
 fi
 
-# python-build-standalone — latest 3.12 LTS release
-# Update the date+version as new releases come out
-PY_VERSION="3.12.10"
-PY_BUILD_DATE="20251007"  # update from https://github.com/astral-sh/python-build-standalone/releases
+# python-build-standalone — pinned 3.12 release
+# Update the date+version as new releases come out:
+# https://github.com/astral-sh/python-build-standalone/releases/latest
+PY_VERSION="3.12.13"
+PY_BUILD_DATE="20260510"
 PY_FILE="cpython-${PY_VERSION}+${PY_BUILD_DATE}-${PY_ARCH}-install_only.tar.gz"
 PY_URL="https://github.com/astral-sh/python-build-standalone/releases/download/${PY_BUILD_DATE}/${PY_FILE}"
 
