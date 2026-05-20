@@ -574,7 +574,8 @@ async def analyze(req: AnalyzeReq, request: Request):
 # ── Library ───────────────────────────────────────────────────────────────────
 
 class SaveReq(BaseModel):
-    file_id: str
+    file_id: str = ""
+    source_lib_id: str = ""  # if set, copy PDF from this existing library entry
     filename: str
     analysis: dict
     tags: list = []
@@ -673,11 +674,23 @@ def _validate_lib_id(lib_id: str):
 
 @app.post("/library/save")
 async def library_save(req: SaveReq):
-    if not all(c.isalnum() or c == "-" for c in req.file_id):
-        raise HTTPException(400, "Invalid file ID")
-    src = UPLOAD_DIR / f"{req.file_id}.pdf"
-    if not src.exists():
-        raise HTTPException(404, "Source PDF not found")
+    # Source PDF can come from a fresh upload (file_id) OR from an existing
+    # library entry (source_lib_id) — the latter is used when the user
+    # re-analyzes a paper they already loaded from the library.
+    if req.source_lib_id:
+        if not all(c.isalnum() or c == "-" for c in req.source_lib_id):
+            raise HTTPException(400, "Invalid source library ID")
+        src = _lib_pdf_path(req.source_lib_id)
+        if not src.exists():
+            raise HTTPException(404, "Source library item not found")
+    elif req.file_id:
+        if not all(c.isalnum() or c == "-" for c in req.file_id):
+            raise HTTPException(400, "Invalid file ID")
+        src = UPLOAD_DIR / f"{req.file_id}.pdf"
+        if not src.exists():
+            raise HTTPException(404, "Source PDF not found")
+    else:
+        raise HTTPException(400, "Either file_id or source_lib_id is required")
 
     title = req.analysis.get("title", "")
     lib_id = str(uuid.uuid4())
@@ -823,21 +836,17 @@ class AnalysisUpdateReq(BaseModel):
 
 @app.patch("/library/{lib_id}/analysis")
 async def library_update_analysis(lib_id: str, req: AnalysisUpdateReq):
+    """Used by inline editing of the rendered analysis (e.g. user typed into
+    the guide_intro / key_insight contenteditable areas). Just rewrites the
+    analysis JSON in-place — top-level meta (title/method/saved_at) is left
+    alone so the library list doesn't reorder while the user is editing.
+    Re-analysis creates a NEW entry instead (see /library/save)."""
     _validate_lib_id(lib_id)
     p = _lib_meta_path(lib_id)
     if not p.exists():
         raise HTTPException(404, "Not found")
     data = json.loads(p.read_text(encoding="utf-8"))
     data["analysis"] = req.analysis
-    # Refresh top-level meta from the new analysis so the library list
-    # reflects any re-analysis (e.g. different intent, updated title).
-    a = req.analysis or {}
-    if a.get("title"):   data["title"]   = a["title"]
-    if a.get("authors"): data["authors"] = a["authors"]
-    if a.get("year"):    data["year"]    = a["year"]
-    method = (a.get("_meta") or {}).get("intent", "")
-    if method: data["analysis_method"] = method
-    data["saved_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
     p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     return {"ok": True}
 

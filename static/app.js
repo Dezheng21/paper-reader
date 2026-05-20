@@ -1411,34 +1411,31 @@ async function deleteLibraryItem(libId) {
 
 async function autoSaveToLibrary(analysis) {
   if (!currentFilename) return;
+  // Decide PDF source: a fresh upload has fileId; a re-analysis of a paper
+  // already in the library has currentLibId — pass source_lib_id so the
+  // backend copies the PDF from that existing library entry.
+  const body = { filename: currentFilename, analysis };
+  if (fileId) {
+    body.file_id = fileId;
+  } else if (currentLibId) {
+    body.source_lib_id = currentLibId;
+  } else {
+    return;  // no source — should not happen, but bail safely
+  }
   try {
     const r = await fetch('/library/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ file_id: fileId, filename: currentFilename, analysis }),
+      body: JSON.stringify(body),
     });
     const data = await r.json();
+    // Point the current tab at the NEW entry so subsequent edits target it,
+    // not the old one (preserving the old entry intact in the library).
     currentLibId = data.id;
     { const tab = getActiveTab(); if (tab) tab.libId = data.id; }
     toast(t('toast_lib_saved'), 'success');
   } catch {
     // silent — saving is best-effort
-  }
-}
-
-// Re-analysis of a paper already in the library: overwrite the analysis JSON
-// + refresh meta fields (title/authors/method) in case they changed.
-async function updateLibraryAnalysis(analysis) {
-  if (!currentLibId) return;
-  try {
-    await fetch(`/library/${currentLibId}/analysis`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ analysis }),
-    });
-    toast(t('toast_lib_saved'), 'success');
-  } catch {
-    // silent — best-effort
   }
 }
 
@@ -2447,14 +2444,11 @@ async function doAnalyze() {
     };
     { const tab = getActiveTab(); if (tab) tab.structure = structure; }
     renderStructure(structure);
-    // Persist the analysis:
-    //   - currentLibId set → already in library (re-analysis), PATCH overwrite
-    //   - fileId set       → new upload, POST a fresh library entry
-    if (currentLibId) {
-      updateLibraryAnalysis(structure);
-    } else if (fileId) {
-      autoSaveToLibrary(structure);
-    }
+    // Every analysis becomes a separate library entry so users can keep
+    // multiple analyses of the same paper (different intent / language / model).
+    // PDF source: fresh upload uses file_id, re-analysis uses source_lib_id
+    // (copies the PDF from the existing library entry).
+    autoSaveToLibrary(structure);
     battleSetContext(structure);
   } catch (e) {
     toast(t('toast_analyze_failed') + e.message);
