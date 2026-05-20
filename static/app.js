@@ -1201,7 +1201,7 @@ function renderAnnotations() {
         <div class="annot-item-head">
           <div class="annot-item-quote page-ref-btn" data-page="${a.page}" style="cursor:pointer"
                title="跳转到第 ${a.page} 页">${esc(a.text.slice(0, 60))}${a.text.length > 60 ? '…' : ''}</div>
-          <button class="annot-item-del" onclick="deleteAnnotation('${a.id}')">✕</button>
+          <button class="annot-item-del" data-action="del-annot" data-id="${a.id}">✕</button>
         </div>
         <div class="annot-item-note">${esc(a.note)}</div>
         <div class="annot-item-meta">第 ${a.page} 页 · ${esc(a.created_at)}</div>
@@ -1275,11 +1275,11 @@ function renderLibraryItems(items, query) {
       <div class="lib-card-meta">${esc(it.authors || '')}${it.year ? ' · ' + esc(it.year) : ''}${it.analysis_method ? ' · ' + esc(it.analysis_method) : ''}${date ? ' · ' + c.savedAt + ' ' + date : ''}</div>
       <div class="lib-card-footer">
         <div class="lib-tags" id="tags_${it.id}">${tagsHTML}
-          <span class="lib-add-tag" onclick="event.stopPropagation();showTagInput('${it.id}')">${esc(c.addTag)}</span>
+          <span class="lib-add-tag" data-action="add-tag" data-id="${it.id}">${esc(c.addTag)}</span>
         </div>
         <div class="lib-card-actions">
-          <button class="lib-btn lib-btn-load" onclick="event.stopPropagation();loadFromLibrary('${it.id}','${esc(it.filename)}')">${esc(c.open)}</button>
-          <button class="lib-btn lib-btn-del"  onclick="event.stopPropagation();deleteLibraryItem('${it.id}')">${esc(c.delete)}</button>
+          <button class="lib-btn lib-btn-load" data-action="load-lib" data-id="${it.id}" data-filename="${esc(it.filename)}">${esc(c.open)}</button>
+          <button class="lib-btn lib-btn-del" data-action="del-lib" data-id="${it.id}">${esc(c.delete)}</button>
         </div>
       </div>
     </div>`;
@@ -1566,6 +1566,29 @@ function init() {
     if (e.target.closest('[data-stop-propagation]')) return;
     const themeHead = e.target.closest('[data-theme-toggle]');
     if (themeHead) { toggleTheme(themeHead.dataset.themeToggle); return; }
+
+    // Data-action dispatcher (replaces inline onclick stripped by DOMPurify)
+    const actionEl = e.target.closest('[data-action]');
+    if (actionEl) {
+      const a  = actionEl.dataset.action;
+      const id = actionEl.dataset.id;
+      // toggle-children sits inside sec-head — prevent both from firing
+      if (a === 'toggle-children') { e.stopPropagation(); toggleChildren(id); return; }
+      if (a === 'select-sec')      { selectSection(id, parseInt(actionEl.dataset.page)); return; }
+      if (a === 'del-annot')       { deleteAnnotation(id); return; }
+    }
+  });
+
+  // Library — event delegation for card actions
+  libBody.addEventListener('click', e => {
+    const actionEl = e.target.closest('[data-action]');
+    if (!actionEl) return;
+    e.stopPropagation();
+    const a = actionEl.dataset.action;
+    const id = actionEl.dataset.id;
+    if (a === 'add-tag')  showTagInput(id);
+    else if (a === 'load-lib') loadFromLibrary(id, actionEl.dataset.filename || '');
+    else if (a === 'del-lib')  deleteLibraryItem(id);
   });
 
   // Library
@@ -2858,9 +2881,9 @@ function renderLegacyTree(data) {
     const childrenHTML = hasSubs
       ? `<div class="sec-children open" id="ch_${sec.id}">${sec.subsections.map(buildSection).join('')}</div>` : '';
     return `<div class="sec-item" data-level="${sec.level}" data-id="${sec.id}" data-page="${sec.page}">
-      <div class="sec-head" onclick="selectSection('${sec.id}',${sec.page})">
+      <div class="sec-head" data-action="select-sec" data-id="${sec.id}" data-page="${sec.page}">
         <div class="toggle-icon ${hasSubs ? 'open' : 'leaf'}" id="tog_${sec.id}"
-             onclick="event.stopPropagation();toggleChildren('${sec.id}')">${hasSubs ? '▶' : ''}</div>
+             data-action="toggle-children" data-id="${sec.id}">${hasSubs ? '▶' : ''}</div>
         <div class="sec-text">
           <span class="sec-title">${esc(sec.title)}</span>
           <span class="sec-page">第 ${sec.page} 页</span>
