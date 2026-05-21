@@ -179,6 +179,41 @@ async def serve_js():
     content = (STATIC_DIR / "app.js").read_bytes()
     return Response(content, media_type="application/javascript", headers=NO_CACHE)
 
+@app.get("/static/i18n.js")
+async def serve_i18n_js():
+    content = (STATIC_DIR / "i18n.js").read_bytes()
+    return Response(content, media_type="application/javascript", headers=NO_CACHE)
+
+# ── No-cache routes for the post-split static assets ──────────────────────────
+# main.css extracted from inline <style>; the 4 JS modules carved out of app.js.
+# Caching them via the default StaticFiles mount would cause partial-update
+# bugs during edits (half-old / half-new code running together).
+
+@app.get("/static/main.css")
+async def serve_main_css():
+    content = (STATIC_DIR / "main.css").read_bytes()
+    return Response(content, media_type="text/css", headers=NO_CACHE)
+
+@app.get("/static/pdf-viewer.js")
+async def serve_pdf_viewer_js():
+    content = (STATIC_DIR / "pdf-viewer.js").read_bytes()
+    return Response(content, media_type="application/javascript", headers=NO_CACHE)
+
+@app.get("/static/library.js")
+async def serve_library_js():
+    content = (STATIC_DIR / "library.js").read_bytes()
+    return Response(content, media_type="application/javascript", headers=NO_CACHE)
+
+@app.get("/static/battle.js")
+async def serve_battle_js():
+    content = (STATIC_DIR / "battle.js").read_bytes()
+    return Response(content, media_type="application/javascript", headers=NO_CACHE)
+
+@app.get("/static/analysis.js")
+async def serve_analysis_js():
+    content = (STATIC_DIR / "analysis.js").read_bytes()
+    return Response(content, media_type="application/javascript", headers=NO_CACHE)
+
 @app.get("/favicon.ico")
 async def serve_favicon():
     fav = STATIC_DIR / "favicon.ico"
