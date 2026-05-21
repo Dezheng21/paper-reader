@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
-# Build a self-contained PaperKnowKnow.app bundle for macOS.
-# Uses python-build-standalone (relocatable Python) — no system Python required.
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  ⚠️  EXPERIMENTAL — NOT VERIFIED TO PRODUCE A WORKING .APP       ║
+# ║                                                                  ║
+# ║  This script builds an .app using python-build-standalone. CI    ║
+# ║  on macOS runners (mac-build.yml) does smoke-test it starts a    ║
+# ║  server, BUT the resulting .app has NOT been confirmed to run    ║
+# ║  end-to-end on real-world Macs.                                  ║
+# ║                                                                  ║
+# ║  For a verified Mac build, use the PyInstaller path instead:     ║
+# ║    bash mac/install.command   # one-time setup                   ║
+# ║    bash mac/build.command     # produces dist/PaperKnowKnow.app  ║
+# ║                                                                  ║
+# ║  See mac/README.md for details.                                  ║
+# ╚══════════════════════════════════════════════════════════════════╝
 set -euo pipefail
 # Trace every command so CI logs show which line failed
 set -x

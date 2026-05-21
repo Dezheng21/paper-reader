@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Smoke test: launch the .app, verify the server responds, kill it.
+# Smoke test for the EXPERIMENTAL python-build-standalone .app.
+# A "pass" here only proves the server starts on a CI runner — it does
+# NOT prove the .app launches via Finder on a real Mac. See mac/README.md.
 set -e
 
 cd "$(dirname "$0")/.."

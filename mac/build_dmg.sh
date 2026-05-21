@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# ⚠️ EXPERIMENTAL — wraps the python-build-standalone .app (NOT verified to
+# run on real Macs). For a verified build, use mac/build.command instead.
+# See mac/README.md.
 # Wrap the .app in a .dmg disk image for distribution.
 set -e
 
