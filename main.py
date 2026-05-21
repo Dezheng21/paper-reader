@@ -25,7 +25,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from ai_analyzer import analyze_paper, validate_key
 from pdf_parser import document_profile, extract_pdf_text, local_ocr_status
-import battle as bt
+
+try:
+    import battle as bt
+except ImportError:
+    bt = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,8 +51,18 @@ def _data_dir() -> Path:
             base = Path(os.environ.get('APPDATA', Path.home())) / 'PaperKnowKnow'
         else:
             base = Path.home() / '.paperknowknow'
-        base.mkdir(parents=True, exist_ok=True)
-        return base
+        try:
+            base.mkdir(parents=True, exist_ok=True)
+            return base
+        except OSError:
+            fallback = Path.home() / 'Documents' / 'PaperKnowKnow'
+            try:
+                fallback.mkdir(parents=True, exist_ok=True)
+                return fallback
+            except OSError:
+                local = Path.cwd() / 'PaperKnowKnowData'
+                local.mkdir(parents=True, exist_ok=True)
+                return local
     return Path(__file__).parent
 
 STATIC_DIR  = _static_dir()
@@ -966,6 +980,8 @@ class BattleStartReq(BaseModel):
 
 @app.post("/battle/start")
 async def battle_start(req: BattleStartReq):
+    if bt is None:
+        raise HTTPException(503, "KnowKnow 对话模块未包含在当前版本中")
     import asyncio, uuid as _uuid
     loop = asyncio.get_event_loop()
     try:
@@ -1005,6 +1021,8 @@ class BattleChatReq(BaseModel):
 
 @app.post("/battle/chat")
 async def battle_chat(req: BattleChatReq):
+    if bt is None:
+        raise HTTPException(503, "KnowKnow 对话模块未包含在当前版本中")
     import asyncio
     s = _battle_sessions.get(req.session_id)
     if not s:
@@ -1035,6 +1053,8 @@ class BattleHelpReq(BaseModel):
 
 @app.post("/battle/help")
 async def battle_help(req: BattleHelpReq):
+    if bt is None:
+        raise HTTPException(503, "KnowKnow 对话模块未包含在当前版本中")
     import asyncio
     s = _battle_sessions.get(req.session_id)
     if not s:
@@ -1060,6 +1080,8 @@ class BattleEndReq(BaseModel):
 
 @app.post("/battle/end")
 async def battle_end(req: BattleEndReq):
+    if bt is None:
+        raise HTTPException(503, "KnowKnow 对话模块未包含在当前版本中")
     import asyncio
     s = _battle_sessions.pop(req.session_id, None)
     if not s:
@@ -1108,94 +1130,46 @@ def _find_free_port(start: int = 8000) -> int:
 
 
 def _run_as_app(port: int) -> None:
-    """Packaged app mode: show window immediately, start server in background."""
-    import tkinter as tk
+    """Packaged app mode without Tk, because system Tcl/Tk can crash on new macOS."""
     import urllib.request
 
-    # ── Build window first so user sees something right away ──────
-    root = tk.Tk()
-    root.title("PaperKnowKnow")
-    root.resizable(False, False)
-    root.configure(bg="#F7F6F3")
-
-    w, h = 320, 175
-    root.update_idletasks()
-    x = (root.winfo_screenwidth() - w) // 2
-    y = (root.winfo_screenheight() - h) // 2
-    root.geometry(f"{w}x{h}+{x}+{y}")
-
-    f = tk.Frame(root, bg="#F7F6F3", padx=24, pady=16)
-    f.pack(fill="both", expand=True)
-
-    tk.Label(f, text="PaperKnowKnow", font=("Helvetica", 15, "bold"),
-             bg="#F7F6F3", fg="#37352F").pack()
-
-    status_var = tk.StringVar(value="⏳  启动中，请稍候…")
-    status_lbl = tk.Label(f, textvariable=status_var, font=("Helvetica", 10),
-                          bg="#F7F6F3", fg="#B45309")
-    status_lbl.pack(pady=2)
-
-    url_var = tk.StringVar(value="")
-    tk.Label(f, textvariable=url_var, font=("Courier", 9),
-             bg="#F7F6F3", fg="#999").pack()
-
-    bf = tk.Frame(f, bg="#F7F6F3")
-    bf.pack(pady=10)
-
-    def _open_browser():
-        webbrowser.open(f"http://127.0.0.1:{port}/")
-
-    def _quit():
-        root.destroy()
-        os._exit(0)
-
-    open_btn = tk.Button(bf, text="打开浏览器", command=_open_browser, width=12,
-                         relief="flat", bg="#CCCCCC", fg="#888888",
-                         padx=8, pady=4, state="disabled")
-    open_btn.pack(side="left", padx=4)
-    tk.Button(bf, text="退出", command=_quit, width=8,
-              relief="flat", bg="#E8E7E3", fg="#37352F",
-              padx=8, pady=4, cursor="hand2").pack(side="left", padx=4)
-
-    root.protocol("WM_DELETE_WINDOW", _quit)
-
-    # ── Start server + wait in background, then update UI ─────────
-    def _start_and_notify():
+    def _run_server():
         import traceback as _tb
+        try:
+            uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+        except Exception:
+            log = Path.home() / "PaperKnowKnow_error.log"
+            log.write_text(_tb.format_exc(), encoding="utf-8")
 
-        def _run_server():
-            try:
-                uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
-            except Exception:
-                log = Path.home() / "PaperKnowKnow_error.log"
-                log.write_text(_tb.format_exc(), encoding="utf-8")
+    threading.Thread(target=_run_server, daemon=True).start()
 
-        threading.Thread(target=_run_server, daemon=True).start()
+    ready = False
+    for _ in range(240):           # up to 60 s (240 x 0.25 s)
+        try:
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=0.5)
+            ready = True
+            break
+        except Exception:
+            time.sleep(0.25)
 
-        ready = False
-        for _ in range(240):           # up to 60 s (240 × 0.25 s)
-            try:
-                urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=0.5)
-                ready = True
-                break
-            except Exception:
-                time.sleep(0.25)
-
-        def _on_ready():
-            status_var.set("✓  服务正在运行")
-            status_lbl.config(fg="#0F7B6C")
-            url_var.set(f"http://127.0.0.1:{port}")
-            open_btn.config(state="normal", bg="#2383E2", fg="white", cursor="hand2")
-            webbrowser.open(f"http://127.0.0.1:{port}/")
-
-        def _on_error():
-            status_var.set("✗  启动失败，请关闭后重试")
-            status_lbl.config(fg="#CB3D3D")
-
-        root.after(0, _on_ready if ready else _on_error)
-
-    threading.Thread(target=_start_and_notify, daemon=True).start()
-    root.mainloop()
+    if ready:
+        webbrowser.open(f"http://127.0.0.1:{port}/")
+        while True:
+            time.sleep(3600)
+    else:
+        try:
+            import subprocess
+            subprocess.run(
+                [
+                    "osascript",
+                    "-e",
+                    'display dialog "PaperKnowKnow 启动失败，请重新打开应用。" buttons {"退出"} with title "PaperKnowKnow"',
+                ],
+                capture_output=True,
+                text=True,
+            )
+        except Exception:
+            pass
     os._exit(0)
 
 
