@@ -7,6 +7,13 @@ __pycache__/
 dist/
 build/
 
+# Local build caches (PyInstaller path uses these to avoid permission issues)
+.pip-cache/
+.pyinstaller-cache/
+.pycache-build/
+.pycache-check/
+.codex-keys/
+
 # 用户数据（不上传）
 uploads/
 library/
