@@ -18,6 +18,11 @@ build/
 uploads/
 library/
 
+# Project-specific temporary artifacts
+paperknowknow-library-*.zip
+windows/do
+windows/test_clean_install.bat
+
 # PyInstaller
 *.spec.bak
 

@@ -670,17 +670,35 @@ function init() {
   pdfSearchClose.addEventListener('click', closePdfSearch);
   pdfSearchOcr.addEventListener('click', ocrScannedPages);
 
-  // Ctrl+F / Cmd+F to open PDF search
-  document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-      if (pdfDoc) { e.preventDefault(); openPdfSearch(); }
+  // Ctrl+F / Cmd+F to open PDF search.
+  // Use capture phase so the browser's native "find in page" does not win first.
+  const interceptPdfSearchShortcut = e => {
+    const key = String(e.key || '').toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && key === 'f' && pdfDoc) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      openPdfSearch();
+      return false;
     }
-  });
+  };
+  window.addEventListener('keydown', interceptPdfSearchShortcut, true);
+  document.addEventListener('keydown', interceptPdfSearchShortcut, true);
 
   // Page-ref + citation click delegation
   sidebarBody.addEventListener('click', e => {
     const pageBtn = e.target.closest('.page-ref-btn');
-    if (pageBtn) { const pg = parseInt(pageBtn.dataset.page); if (pg) goToPage(pg, pageBtn.dataset.hint || ''); return; }
+    if (pageBtn) {
+      const pg = parseInt(pageBtn.dataset.page);
+      if (pg) {
+        goToPage(pg, {
+          hint: pageBtn.dataset.hint || '',
+          snippet: pageBtn.dataset.snippet || pageBtn.dataset.hint || '',
+          label: pageBtn.textContent?.trim() || '',
+        });
+      }
+      return;
+    }
 
     const copyBtn = e.target.closest('.cite-copy');
     if (copyBtn) {
@@ -692,7 +710,15 @@ function init() {
     }
 
     const findBtn = e.target.closest('.cite-find');
-    if (findBtn) { searchCitationInPDF(findBtn.dataset.q || ''); return; }
+    if (findBtn) {
+      searchCitationInPDF({
+        quote: findBtn.dataset.q || '',
+        page: parseInt(findBtn.dataset.page || '0', 10) || null,
+        hint: findBtn.dataset.hint || '',
+        snippet: findBtn.dataset.snippet || findBtn.dataset.q || '',
+      });
+      return;
+    }
 
     const detailsToggle = e.target.closest('.details-toggle');
     if (detailsToggle) { toggleDetailsLayer(); return; }

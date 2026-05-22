@@ -289,14 +289,11 @@ async def search_doc(file_id: str, q: str, source: str = "upload", limit: int = 
 
     pages = extract_pdf_text(str(path))
     matches = []
+    loose_matches = []
     for p in pages:
         raw = p.get("text", "")
         hay = _normalize_search_text(raw)
         pos = hay.find(query)
-        if pos < 0:
-            words = [w for w in re.split(r"\W+", query) if len(w) >= 4]
-            found = [hay.find(w) for w in words if hay.find(w) >= 0]
-            pos = min(found) if found else -1
         if pos >= 0:
             start = max(0, pos - 70)
             end = min(len(hay), pos + len(query) + 110)
@@ -307,7 +304,21 @@ async def search_doc(file_id: str, q: str, source: str = "upload", limit: int = 
             })
             if len(matches) >= limit:
                 break
-    return {"matches": matches}
+        else:
+            words = [w for w in re.split(r"\W+", query) if len(w) >= 5]
+            found = [hay.find(w) for w in words if hay.find(w) >= 0]
+            if len(found) >= min(2, len(words)) and words:
+                pos2 = min(found)
+                start = max(0, pos2 - 70)
+                end = min(len(hay), pos2 + 180)
+                loose_matches.append({
+                    "page": p["page"],
+                    "snippet": hay[start:end],
+                    "source": p.get("source", "text_layer"),
+                })
+                if len(loose_matches) >= limit:
+                    break
+    return {"matches": matches if matches else loose_matches}
 
 # ── Validate API key ──────────────────────────────────────────────────────────
 

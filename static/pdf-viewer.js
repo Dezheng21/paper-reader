@@ -31,6 +31,243 @@ function clearSearchHighlights() {
   });
 }
 
+function getPdfIdentity() {
+  return {
+    fileId: window.fileId || null,
+    libId: window.currentLibId || null,
+    tabId: window.activeTabId || null,
+    renderGen: window._renderGen || 0,
+    doc: window.pdfDoc || null,
+  };
+}
+
+function samePdfIdentity(a, b) {
+  return !!a && !!b &&
+    a.fileId === b.fileId &&
+    a.libId === b.libId &&
+    a.tabId === b.tabId &&
+    a.renderGen === b.renderGen &&
+    a.doc === b.doc;
+}
+
+function getPdfSourceFromIdentity(identity) {
+  return identity?.libId ? 'library' : 'upload';
+}
+
+function stampPdfContext(el, identity, extra = {}) {
+  if (!el || !identity) return;
+  if (identity.fileId) el.dataset.fileId = identity.fileId;
+  else delete el.dataset.fileId;
+  if (identity.libId) el.dataset.libId = identity.libId;
+  else delete el.dataset.libId;
+  el.dataset.renderGen = String(identity.renderGen || 0);
+  if (identity.tabId) el.dataset.tabId = String(identity.tabId);
+  else delete el.dataset.tabId;
+  Object.entries(extra).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === '') delete el.dataset[k];
+    else el.dataset[k] = String(v);
+  });
+}
+
+function elementMatchesPdfIdentity(el, identity) {
+  if (!el || !identity) return false;
+  return (el.dataset.fileId || '') === (identity.fileId || '') &&
+    (el.dataset.libId || '') === (identity.libId || '') &&
+    (el.dataset.renderGen || '0') === String(identity.renderGen || 0) &&
+    (el.dataset.tabId || '') === String(identity.tabId || '');
+}
+
+function getIdentityFromElement(el) {
+  if (!el) return null;
+  return {
+    fileId: el.dataset.fileId || null,
+    libId: el.dataset.libId || null,
+    tabId: el.dataset.tabId || null,
+    renderGen: parseInt(el.dataset.renderGen || '0', 10) || 0,
+    doc: window.pdfDoc || null,
+  };
+}
+
+function getWrapForPage(pageNum, identity = getPdfIdentity()) {
+  const wrap = pdfPages.querySelector(`[data-page-num="${pageNum}"]`);
+  if (!wrap || !elementMatchesPdfIdentity(wrap, identity)) return null;
+  return wrap;
+}
+
+function centerWrapInView(wrap) {
+  if (!wrap) return;
+  const target = Math.max(0, wrap.offsetTop - ((pdfScroll.clientHeight - wrap.offsetHeight) / 2));
+  pdfScroll.scrollTo({ top: target, behavior: 'smooth' });
+}
+
+function centerElementInView(el, wrap) {
+  if (!el || !wrap) return;
+  const elTop = (parseFloat(el.style.top) || 0) + wrap.offsetTop;
+  const elHeight = parseFloat(el.style.fontSize) || el.offsetHeight || 18;
+  const target = Math.max(0, elTop - ((pdfScroll.clientHeight - elHeight) / 2));
+  pdfScroll.scrollTo({ top: target, behavior: 'smooth' });
+}
+
+function normalizeLocator(locator) {
+  if (typeof locator === 'string') {
+    return {
+      quote: locator,
+      hint: locator,
+      snippet: locator,
+      page: null,
+      label: '',
+    };
+  }
+  locator = locator || {};
+  return {
+    quote: locator.quote || '',
+    hint: locator.hint || locator.quote || '',
+    snippet: locator.snippet || locator.hint || locator.quote || '',
+    page: locator.page || null,
+    label: locator.label || '',
+  };
+}
+
+function makeQueryCandidates(locator) {
+  const values = [locator.quote, locator.hint, locator.snippet, locator.label]
+    .map(v => String(v || '').trim())
+    .filter(Boolean);
+  const uniq = [];
+  for (const val of values) {
+    if (!uniq.includes(val)) uniq.push(val);
+  }
+  return uniq.sort((a, b) => b.length - a.length);
+}
+
+function significantWords(text) {
+  const seen = new Set();
+  const words = [];
+  for (const raw of String(text || '').split(/[^\p{L}\p{N}]+/u)) {
+    const w = normalizeFindText(raw);
+    if (w.length < 5 || seen.has(w)) continue;
+    seen.add(w);
+    words.push(w);
+  }
+  return words.sort((a, b) => b.length - a.length);
+}
+
+function buildTextBlocks(spans) {
+  if (!spans.length) return [];
+  const items = spans.map(span => ({
+    span,
+    top: parseFloat(span.style.top) || 0,
+    left: parseFloat(span.style.left) || 0,
+    width: span.offsetWidth || ((parseFloat(span.style.fontSize) || 12) * Math.max(span.textContent.length * 0.55, 1)),
+    height: parseFloat(span.style.fontSize) || span.offsetHeight || 12,
+    text: span.textContent || '',
+  })).sort((a, b) => (a.top - b.top) || (a.left - b.left));
+
+  const lines = [];
+  for (const item of items) {
+    const last = lines[lines.length - 1];
+    const tol = Math.max(6, item.height * 0.65);
+    if (last && Math.abs(last.top - item.top) <= tol) {
+      last.items.push(item);
+      last.top = Math.min(last.top, item.top);
+      last.bottom = Math.max(last.bottom, item.top + item.height);
+    } else {
+      lines.push({
+        top: item.top,
+        bottom: item.top + item.height,
+        items: [item],
+      });
+    }
+  }
+
+  lines.forEach(line => line.items.sort((a, b) => a.left - b.left));
+
+  const blocks = [];
+  for (const line of lines) {
+    const lineText = line.items.map(i => i.text).join(' ').trim();
+    if (!lineText) continue;
+    const lineHeight = Math.max(...line.items.map(i => i.height), 12);
+    const last = blocks[blocks.length - 1];
+    const gap = last ? line.top - last.bottom : Infinity;
+    const shouldMerge = !!last && gap <= Math.max(14, lineHeight * 1.15);
+    if (shouldMerge) {
+      last.lines.push(line);
+      last.items.push(...line.items);
+      last.text += ' ' + lineText;
+      last.bottom = Math.max(last.bottom, line.bottom);
+    } else {
+      blocks.push({
+        lines: [line],
+        items: [...line.items],
+        text: lineText,
+        top: line.top,
+        bottom: line.bottom,
+      });
+    }
+  }
+
+  return blocks.map(block => {
+    const left = Math.min(...block.items.map(i => i.left));
+    const right = Math.max(...block.items.map(i => i.left + i.width));
+    const top = Math.min(...block.items.map(i => i.top));
+    const bottom = Math.max(...block.items.map(i => i.top + i.height));
+    return {
+      spans: block.items.map(i => i.span),
+      text: block.text.trim(),
+      norm: normalizeFindText(block.text),
+      top,
+      left,
+      right,
+      bottom,
+      width: right - left,
+      height: bottom - top,
+    };
+  });
+}
+
+function scoreBlockAgainstQueries(block, queries) {
+  let best = 0;
+  for (const q of queries) {
+    const norm = normalizeFindText(q);
+    if (!norm) continue;
+    if (block.norm.includes(norm)) best = Math.max(best, 1000 + norm.length);
+    const words = significantWords(q).slice(0, 6);
+    if (words.length) {
+      const hits = words.filter(w => block.norm.includes(w));
+      if (hits.length >= Math.min(2, words.length)) {
+        const hitScore = hits.reduce((sum, w) => sum + w.length, 0);
+        best = Math.max(best, 100 + hitScore);
+      }
+    }
+  }
+  return best;
+}
+
+function clearBlockHighlights() {
+  document.querySelectorAll('.text-highlight').forEach(el => el.remove());
+}
+
+function highlightBlock(wrap, block, className = 'text-highlight') {
+  if (!wrap || !block) return null;
+  const box = document.createElement('div');
+  box.className = className;
+  box.style.position = 'absolute';
+  box.style.left = Math.max(0, block.left - 6) + 'px';
+  box.style.top = Math.max(0, block.top - 4) + 'px';
+  box.style.width = (block.width + 12) + 'px';
+  box.style.height = (block.height + 8) + 'px';
+  box.style.border = '2px solid rgba(250, 204, 21, 0.95)';
+  box.style.background = 'rgba(250, 204, 21, 0.14)';
+  box.style.borderRadius = '8px';
+  box.style.boxShadow = '0 0 0 3px rgba(250, 204, 21, 0.18)';
+  box.style.pointerEvents = 'none';
+  box.style.zIndex = '3';
+  wrap.appendChild(box);
+  setTimeout(() => {
+    box.remove();
+  }, 7000);
+  return box;
+}
+
 function normalizeFindText(s) {
   return String(s || '')
     .normalize('NFKC')
@@ -73,6 +310,27 @@ function spanRangesForQuery(spans, query) {
   return [];
 }
 
+function exactSpanRangesForQuery(spans, query) {
+  const needle = normalizeFindText(query);
+  if (!needle || needle.length < 2) return [];
+
+  let full = '';
+  const ranges = [];
+  for (const span of spans) {
+    const start = full.length;
+    const norm = normalizeFindText(span.textContent);
+    full += norm;
+    ranges.push({ span, start, end: full.length });
+  }
+
+  const pos = full.indexOf(needle);
+  if (pos < 0) return [];
+  const end = pos + needle.length;
+  return ranges
+    .filter(r => r.end > pos && r.start < end)
+    .map(r => r.span);
+}
+
 function highlightSpanGroup(spans, cls = 'hl-search') {
   spans.forEach(s => s.classList.add(cls));
   return spans[0] || null;
@@ -80,32 +338,35 @@ function highlightSpanGroup(spans, cls = 'hl-search') {
 
 async function executeSearch(term) {
   const seq = ++_searchSeq;
+  const identity = getPdfIdentity();
   clearSearchHighlights();
   _searchMatches = [];
   _searchIdx = -1;
   _searchTerm = term;
   if (!term || !pdfDoc) { pdfSearchCount.textContent = ''; return; }
 
-  const layers = pdfPages.querySelectorAll('.textLayer');
+  const layers = Array.from(pdfPages.querySelectorAll('.textLayer'))
+    .filter(layer => elementMatchesPdfIdentity(layer, identity));
   layers.forEach(layer => {
     const spans = Array.from(layer.querySelectorAll('span'));
-    const hits = spanRangesForQuery(spans, term);
+    const hits = exactSpanRangesForQuery(spans, term);
     if (hits.length) {
       highlightSpanGroup(hits, 'hl-search');
-      _searchMatches.push({ pageNum: parseInt(layer.dataset.page) || 1, el: hits[0], els: hits, query: term });
+      _searchMatches.push({ pageNum: parseInt(layer.dataset.page) || 1, el: hits[0], els: hits, query: term, identity });
     }
   });
 
   if (_searchMatches.length === 0) {
     pdfSearchCount.textContent = ui().misc.searchLoading;
-    const backendMatches = await searchDocumentBackend(term);
-    if (seq !== _searchSeq) return;
+    const backendMatches = await searchDocumentBackend(term, identity);
+    if (seq !== _searchSeq || !samePdfIdentity(identity, getPdfIdentity())) return;
     _searchMatches = backendMatches.map(m => ({
       pageNum: m.page,
       el: null,
       snippet: m.snippet || '',
       query: term,
       fallbackQuery: m.snippet || '',
+      identity,
     }));
   }
 
@@ -117,10 +378,10 @@ async function executeSearch(term) {
   navigateSearchMatch();
 }
 
-async function searchDocumentBackend(term) {
-  const id = currentLibId || fileId;
+async function searchDocumentBackend(term, identity = getPdfIdentity()) {
+  const id = identity?.libId || identity?.fileId;
   if (!id) return [];
-  const source = currentLibId ? 'library' : 'upload';
+  const source = getPdfSourceFromIdentity(identity);
   try {
     const r = await fetch(`/search_doc/${id}?source=${source}&q=${encodeURIComponent(term)}`);
     if (!r.ok) return [];
@@ -135,50 +396,85 @@ async function navigateSearchMatch() {
   if (!_searchMatches.length) return;
   _searchMatches.forEach(m => (m.els || [m.el]).forEach(el => el?.classList.remove('current')));
   const match = _searchMatches[_searchIdx];
+  const identity = match.identity || getPdfIdentity();
+  if (!samePdfIdentity(identity, getPdfIdentity())) return;
   pdfSearchCount.textContent = t('search_count', { a: _searchIdx + 1, b: _searchMatches.length });
   pdfSearchPrev.disabled = _searchIdx <= 0;
   pdfSearchNext.disabled = _searchIdx >= _searchMatches.length - 1;
   if (match.el) {
     (match.els || [match.el]).forEach(el => el?.classList.add('current'));
-    match.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const wrap = getWrapForPage(match.pageNum, identity);
+    if (wrap) centerElementInView(match.el, wrap);
   } else {
-    const ok = await goToPage(match.pageNum, match.query || _searchTerm);
-    if (!ok && match.fallbackQuery) await goToPage(match.pageNum, match.fallbackQuery);
+    const primary = match.fallbackQuery || match.query || _searchTerm;
+    const ok = await goToPage(match.pageNum, {
+      snippet: match.fallbackQuery || '',
+      hint: primary,
+      quote: match.query || _searchTerm || '',
+      page: match.pageNum,
+    }, identity);
+    if (!ok && match.query) {
+      await goToPage(match.pageNum, {
+        hint: match.query,
+        quote: match.query,
+        page: match.pageNum,
+      }, identity);
+    }
   }
 }
 
-async function searchCitationInPDF(text) {
-  if (!text) return;
+async function searchCitationInPDF(target) {
+  const locator = normalizeLocator(target);
+  if (!locator.quote && !locator.hint && !locator.snippet) return;
   if (!pdfDoc) { toast(t('toast_need_pdf')); return; }
-  const snapDoc = pdfDoc;
+  const identity = getPdfIdentity();
+  const snapDoc = identity.doc;
   showLoading(ui().misc.searchOriginal);
-  // Try progressively shorter prefixes for robustness across PDF text extraction
-  const candidates = [
-    text.slice(0, 40),
-    text.slice(0, 25),
-    text.split(/[\s,.;:]/)[0],  // first word/phrase
-  ].map(s => s.trim().toLowerCase()).filter(s => s.length > 3);
+  const candidates = makeQueryCandidates(locator);
 
   try {
-    const backendMatches = await searchDocumentBackend(text);
+    if (locator.page) {
+      const pageOk = await goToPage(locator.page, locator, identity);
+      if (pageOk) {
+        hideLoading();
+        toast(t('toast_found_page', { n: locator.page }), 'success');
+        return;
+      }
+    }
+
+    const backendMatches = await searchDocumentBackend(candidates[0] || locator.quote || locator.hint, identity);
+    if (!samePdfIdentity(identity, getPdfIdentity())) {
+      hideLoading();
+      return;
+    }
     if (backendMatches.length) {
       const pg = backendMatches[0].page;
       hideLoading();
-      const ok = await goToPage(pg, text);
-      if (!ok && backendMatches[0].snippet) await goToPage(pg, backendMatches[0].snippet);
+      const ok = await goToPage(pg, {
+        ...locator,
+        page: pg,
+        snippet: backendMatches[0].snippet || locator.snippet || locator.quote,
+      }, identity);
+      if (!ok && backendMatches[0].snippet) {
+        await goToPage(pg, { ...locator, page: pg, hint: backendMatches[0].snippet, snippet: backendMatches[0].snippet }, identity);
+      }
       toast(t('toast_found_page', { n: pg }), 'success');
       return;
     }
 
     const n = snapDoc.numPages;
     for (let pg = 1; pg <= n; pg++) {
+      if (!samePdfIdentity(identity, getPdfIdentity())) {
+        hideLoading();
+        return;
+      }
       const page = await snapDoc.getPage(pg);
       const content = await page.getTextContent();
       const pageText = content.items.map(i => i.str).join(' ').toLowerCase();
-      const found = candidates.some(c => pageText.includes(c));
+      const found = candidates.some(c => pageText.includes(String(c).toLowerCase()));
       if (found) {
         hideLoading();
-        await goToPage(pg, text.slice(0, 30));
+        await goToPage(pg, { ...locator, page: pg }, identity);
         toast(t('toast_found_page', { n: pg }), 'success');
         return;
       }
@@ -253,6 +549,7 @@ async function handleFile(file) {
 
 async function renderPDF(url) {
   const myGen = ++_renderGen;   // claim a generation token
+  const identity = getPdfIdentity();
 
   pdfPages.innerHTML = '';
   renderObs.forEach(o => o.disconnect());
@@ -289,6 +586,7 @@ async function renderPDF(url) {
     const wrap = document.createElement('div');
     wrap.className = 'page-wrap';
     wrap.dataset.pageNum = String(i);
+    stampPdfContext(wrap, { ...identity, renderGen: myGen, doc }, { pageNum: i });
 
     // Placeholder
     const ph = document.createElement('div');
@@ -331,6 +629,12 @@ async function renderOnePage(pageNum, wrap, doc) {
   const canvas = document.createElement('canvas');
   canvas.width  = Math.round(vp.width);
   canvas.height = Math.round(vp.height);
+  stampPdfContext(canvas, getIdentityFromElement(wrap) || getPdfIdentity(), {
+    page: pageNum,
+    scale: scale.toFixed(6),
+    width: vp.width,
+    height: vp.height,
+  });
 
   await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
 
@@ -350,6 +654,12 @@ async function renderTextLayer(page, vp, scale, wrap, pageNum) {
   layer.dataset.page = pageNum;
   layer.style.width  = Math.round(vp.width)  + 'px';
   layer.style.height = Math.round(vp.height) + 'px';
+  stampPdfContext(layer, getIdentityFromElement(wrap) || getPdfIdentity(), {
+    page: pageNum,
+    scale: scale.toFixed(6),
+    width: vp.width,
+    height: vp.height,
+  });
 
   let itemCount = 0;
   for (const item of content.items) {
@@ -384,13 +694,15 @@ async function renderTextLayer(page, vp, scale, wrap, pageNum) {
 }
 
 async function _tryFallbackText(layer, vp, pageNum) {
-  const id = currentLibId || fileId;
+  const identity = getPdfIdentity();
+  const id = identity.libId || identity.fileId;
   if (!id) return;
-  const source = currentLibId ? 'library' : 'upload';
+  const source = getPdfSourceFromIdentity(identity);
   try {
     const r = await fetch(`/page_text/${id}/${pageNum}?source=${source}`);
     if (!r.ok) return;
     const data = await r.json();
+    if (!samePdfIdentity(identity, getPdfIdentity()) || !elementMatchesPdfIdentity(layer, identity)) return;
     if (data.spans && data.spans.length > 0) {
       const pw = vp.width, ph = vp.height;
       for (const s of data.spans) {
@@ -468,21 +780,24 @@ function updateBadge() {
   }
 }
 
-async function goToPage(pageNum, textHint) {
-  const wrap = pdfPages.querySelector(`[data-page-num="${pageNum}"]`);
+async function goToPage(pageNum, target, identity = getPdfIdentity()) {
+  const locator = normalizeLocator(target);
+  if (!samePdfIdentity(identity, getPdfIdentity())) return false;
+  const wrap = getWrapForPage(pageNum, identity);
   if (!wrap) return false;
-  wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  centerWrapInView(wrap);
   curPage.textContent = pageNum;
 
   // Remove any existing highlights
-  document.querySelectorAll('.text-highlight').forEach(el => el.remove());
+  clearBlockHighlights();
   document.querySelectorAll('.textLayer span.hl').forEach(el => el.classList.remove('hl'));
 
-  if (textHint && pdfDoc) {
-    const snapDoc = pdfDoc;
+  if ((locator.quote || locator.hint || locator.snippet) && identity.doc) {
+    const snapDoc = identity.doc;
     // Ensure page is rendered before searching text
     if (!wrap.dataset.rendered) await renderOnePage(pageNum, wrap, snapDoc);
-    const found = await highlightTextOnPage(pageNum, textHint, wrap);
+    if (!samePdfIdentity(identity, getPdfIdentity())) return false;
+    const found = await highlightTextOnPage(pageNum, locator, wrap, identity);
     if (!found) {
       wrap.classList.remove('flash');
       void wrap.offsetWidth;
@@ -499,9 +814,11 @@ async function goToPage(pageNum, textHint) {
   }
 }
 
-async function highlightTextOnPage(pageNum, textHint, wrap) {
-  const snapDoc = pdfDoc;
+async function highlightTextOnPage(pageNum, target, wrap, identity = getPdfIdentity()) {
+  const locator = normalizeLocator(target);
+  const snapDoc = identity.doc;
   try {
+    if (!samePdfIdentity(identity, getPdfIdentity()) || !elementMatchesPdfIdentity(wrap, identity)) return false;
     // Ensure text layer exists
     let layer = wrap.querySelector('.textLayer');
     if (!layer) {
@@ -512,23 +829,48 @@ async function highlightTextOnPage(pageNum, textHint, wrap) {
       await renderTextLayer(page, page.getViewport({ scale }), scale, wrap, pageNum);
       layer = wrap.querySelector('.textLayer');
     }
-    if (!layer) return false;
+    if (!layer || !elementMatchesPdfIdentity(layer, identity)) return false;
 
     const spans = Array.from(layer.querySelectorAll('span'));
-    const hitSpans = spanRangesForQuery(spans, textHint);
+    const blocks = buildTextBlocks(spans);
+    const queries = makeQueryCandidates(locator);
+    let bestBlock = null;
+    let bestScore = 0;
+    for (const block of blocks) {
+      const score = scoreBlockAgainstQueries(block, queries);
+      if (score > bestScore) {
+        bestScore = score;
+        bestBlock = block;
+      }
+    }
+
+    if (bestBlock && bestScore >= 20) {
+      highlightBlock(wrap, bestBlock);
+      const centerEl = bestBlock.spans[Math.floor(bestBlock.spans.length / 2)] || bestBlock.spans[0];
+      centerElementInView(centerEl, wrap);
+      return true;
+    }
+
+    const hitSpans = spanRangesForQuery(spans, locator.hint || locator.quote || locator.snippet);
     if (!hitSpans.length) return false;
 
     const matchSpan = hitSpans[0];
     const matchTop  = parseFloat(matchSpan.style.top);
     const fontSize  = parseFloat(matchSpan.style.fontSize) || 12;
     const band      = fontSize * 3;
-
     const sameLine = spans.filter(s => Math.abs(parseFloat(s.style.top) - matchTop) <= band);
-    const toHL = hitSpans.length >= 2 ? hitSpans : sameLine;
-    toHL.forEach(s => s.classList.add('hl'));
-    setTimeout(() => toHL.forEach(s => s.classList.remove('hl')), 7000);
+    const lineBlock = {
+      spans: hitSpans.length >= 2 ? hitSpans : sameLine,
+      left: Math.min(...(hitSpans.length >= 2 ? hitSpans : sameLine).map(s => parseFloat(s.style.left) || 0)),
+      top: Math.min(...(hitSpans.length >= 2 ? hitSpans : sameLine).map(s => parseFloat(s.style.top) || 0)),
+      right: Math.max(...(hitSpans.length >= 2 ? hitSpans : sameLine).map(s => (parseFloat(s.style.left) || 0) + (s.offsetWidth || 0))),
+      bottom: Math.max(...(hitSpans.length >= 2 ? hitSpans : sameLine).map(s => (parseFloat(s.style.top) || 0) + (parseFloat(s.style.fontSize) || s.offsetHeight || 12))),
+    };
+    lineBlock.width = lineBlock.right - lineBlock.left;
+    lineBlock.height = lineBlock.bottom - lineBlock.top;
 
-    matchSpan.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    highlightBlock(wrap, lineBlock);
+    centerElementInView(matchSpan, wrap);
     return true;
   } catch { return false; }
 }

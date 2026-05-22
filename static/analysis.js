@@ -167,13 +167,24 @@ function renderStructure(data) {
 
 function evidenceBadge(item) {
   const status = item?.evidence_status || 'not_checked';
-  const suffix = item?.evidence_page ? ` · ${pageLabel(item.evidence_page)}` : '';
+  const page   = item?.evidence_page || null;
+  const suffix = page ? ` · ${pageLabel(page)}` : '';
   const label = status === 'verified'
     ? `${lab('verified')}${suffix}`
     : status === 'unverified'
       ? lab('unverified')
       : lab('notChecked');
   const note = item?.evidence_note ? ` title="${esc(item.evidence_note)}"` : '';
+  // When the source is BOTH verified AND has a page number, make the whole
+  // badge clickable. The `page-ref-btn` class is recognized by the sidebar
+  // click-delegation in app.js, which routes to goToPage(page, hint) — the
+  // same destination as the "PDF 定位" button. The quote (if present) is
+  // passed as the hint so the PDF viewer can also highlight the matching
+  // text after jumping. When no page exists we fall back to a bare span.
+  if (status === 'verified' && page) {
+    const hint = esc(item?.quote || item?.text_hint || '');
+    return `<span class="evidence-badge ${status} page-ref-btn"${note} data-page="${page}" data-hint="${hint}" style="cursor:pointer">${label}</span>`;
+  }
   return `<span class="evidence-badge ${status}"${note}>${label}</span>`;
 }
 
@@ -356,8 +367,39 @@ function renderGuide(data) {
     </div>`;
   }
 
+  // String-coercion helper for AI fields that might come back as objects.
+  // Declared early because the moved research-method / key-results blocks
+  // below also use it (they were originally inside the deep_notes section).
+  const _str = v => {
+    if (!v && v !== 0) return '';
+    if (typeof v === 'string') return v;
+    return v.text || v.content || v.description || v.contribution || v.finding || v.point || JSON.stringify(v);
+  };
+
   // ── Cognition Layer (认知层) — visual anchor ──────────────────────
   html += renderCognitionLayer(data);
+
+  // ── Research Method & Key Results — promoted to the top so they sit
+  //    ABOVE the collapsed details layer and become the first substantive
+  //    blocks the reader sees after the cognition anchor.
+  if (data.methodology_flow) {
+    html += `<div class="mode-section"><span class="section-label">${lab('researchMethod')}</span>
+      <div class="methodology-text" contenteditable="true" data-path="methodology_flow">${esc(_str(data.methodology_flow))}</div></div>`;
+  }
+  if (data.key_results?.length) {
+    html += `<div class="mode-section"><span class="section-label">${lab('keyResults')}</span>` +
+      data.key_results.map(r => {
+        if (typeof r === 'string') return `<div class="result-item"><div class="result-finding">${esc(r)}</div></div>`;
+        const finding = _str(r.finding || r.result || r.description || r);
+        const dv      = _str(r.data   || r.value  || r.numbers || '');
+        const comp    = _str(r.comparison || r.vs  || r.baseline || '');
+        return `<div class="result-item">
+          <div class="result-finding">${esc(finding)}</div>
+          ${dv   ? `<div class="result-data">${esc(dv)}</div>` : ''}
+          ${comp ? `<div class="result-comp">对比：${esc(comp)}</div>` : ''}
+        </div>`;
+      }).join('') + `</div>`;
+  }
 
   // Toggle: collapse/expand the details below
   html += `<div class="details-toggle">
@@ -412,7 +454,7 @@ function renderGuide(data) {
           ${evidenceBadge(c)}
           <div class="citation-actions">
             <button class="cite-btn cite-copy" data-q="${esc(q)}">${esc(t('copy'))}</button>
-            <button class="cite-btn cite-find" data-q="${esc(q)}">${esc(t('pdf_locate'))}</button>
+            <button class="cite-btn cite-find" data-q="${esc(q)}" data-page="${c.evidence_page || ''}" data-hint="${esc(c.text_hint || c.quote || '')}" data-snippet="${esc(c.quote || '')}">${esc(t('pdf_locate'))}</button>
           </div>
         </div>`;
       }).join('');
@@ -456,7 +498,7 @@ function renderGuide(data) {
           ${evidenceBadge(ci)}
           <div class="citation-actions">
             <button class="cite-btn cite-copy" data-q="${esc(q)}">${esc(t('copy'))}</button>
-            <button class="cite-btn cite-find" data-q="${esc(q)}">${esc(t('pdf_locate'))}</button>
+            <button class="cite-btn cite-find" data-q="${esc(q)}" data-page="${ci.evidence_page || ''}" data-hint="${esc(ci.text_hint || ci.quote || '')}" data-snippet="${esc(ci.quote || '')}">${esc(t('pdf_locate'))}</button>
           </div>
         </div>`;
       }).join('')}
@@ -488,8 +530,11 @@ function renderGuide(data) {
     html += `</div>`;
   }
 
-  // Vocab cards (language learning mode)
-  if (data.key_terms && data.key_terms.length) {
+  // Vocab cards — language-learning mode only. We require BOTH conditions:
+  //   1) the user has the "语言学习 / Lang Learning" toggle ON (`learnLang`)
+  //   2) the AI actually returned `key_terms` and the array is non-empty
+  // Otherwise we skip rendering the container entirely (no empty placeholder).
+  if (learnLang && data.key_terms && data.key_terms.length) {
     html += `<div class="vocab-section">
       <span class="vocab-section-label">${lab('vocab')}</span>`;
     data.key_terms.forEach(term => {
@@ -504,33 +549,13 @@ function renderGuide(data) {
   }
 
   // ── deep_notes extra sections ──
-  // Coerce AI output to plain string (guards against unexpected {object} responses)
-  const _str = v => {
-    if (!v && v !== 0) return '';
-    if (typeof v === 'string') return v;
-    return v.text || v.content || v.description || v.contribution || v.finding || v.point || JSON.stringify(v);
-  };
+  // Note: `_str` helper, `researchMethod`, and `keyResults` blocks have been
+  // moved to the top of renderGuide (above the details-toggle) so the reader
+  // sees them first. Only contributions/limits/etc remain in the collapsed
+  // details layer.
   if (data.contributions?.length) {
     html += `<div class="mode-section"><span class="section-label">${lab('contributions')}</span>
       <ul class="contributions-list">${data.contributions.map(c => `<li contenteditable="true">${esc(_str(c))}</li>`).join('')}</ul></div>`;
-  }
-  if (data.methodology_flow) {
-    html += `<div class="mode-section"><span class="section-label">${lab('researchMethod')}</span>
-      <div class="methodology-text" contenteditable="true" data-path="methodology_flow">${esc(_str(data.methodology_flow))}</div></div>`;
-  }
-  if (data.key_results?.length) {
-    html += `<div class="mode-section"><span class="section-label">${lab('keyResults')}</span>` +
-      data.key_results.map(r => {
-        if (typeof r === 'string') return `<div class="result-item"><div class="result-finding">${esc(r)}</div></div>`;
-        const finding = _str(r.finding || r.result || r.description || r);
-        const dv      = _str(r.data   || r.value  || r.numbers || '');
-        const comp    = _str(r.comparison || r.vs  || r.baseline || '');
-        return `<div class="result-item">
-          <div class="result-finding">${esc(finding)}</div>
-          ${dv   ? `<div class="result-data">${esc(dv)}</div>` : ''}
-          ${comp ? `<div class="result-comp">对比：${esc(comp)}</div>` : ''}
-        </div>`;
-      }).join('') + `</div>`;
   }
   if (data.limitations_future) {
     const lf = data.limitations_future;
